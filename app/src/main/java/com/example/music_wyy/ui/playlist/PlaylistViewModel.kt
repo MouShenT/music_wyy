@@ -4,6 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.music_wyy.data.local.datastore.CookieStore
 import com.example.music_wyy.data.remote.NeteaseApi
+import com.example.music_wyy.session.UserSession
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -50,6 +51,7 @@ private data class UserPlaylistResponse(
 class PlaylistViewModel(
     private val api: NeteaseApi,
     private val cookieStore: CookieStore,
+    private val userSession: UserSession,
 ) : ViewModel() {
 
     private val _state = MutableStateFlow(PlaylistUiState())
@@ -72,7 +74,8 @@ class PlaylistViewModel(
                     return@launch
                 }
 
-                val response = api.getUserPlaylists("", "MUSIC_U=$cookie")
+                val uid = userSession.state.value.userId.toString()
+                val response = api.getUserPlaylists(uid, "MUSIC_U=$cookie")
                 val body = response.string()
                 val result = json.decodeFromString<UserPlaylistResponse>(body)
 

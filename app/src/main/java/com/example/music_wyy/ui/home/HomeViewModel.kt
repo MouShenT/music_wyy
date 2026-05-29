@@ -58,7 +58,8 @@ class HomeViewModel(
                 if (cookie.isBlank()) return@launch
 
                 // Load playlists count
-                val resp = api.getUserPlaylists("", "MUSIC_U=$cookie")
+                val uid = userSession.state.value.userId.toString()
+                val resp = api.getUserPlaylists(uid, "MUSIC_U=$cookie")
                 val body = resp.string()
                 val result = json.decodeFromString<UserPlaylistResponse>(body)
                 _state.update {

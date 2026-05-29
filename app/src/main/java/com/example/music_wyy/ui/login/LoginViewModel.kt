@@ -26,7 +26,14 @@ data class LoginUiState(
 private data class LoginApiResponse(val data: LoginResponse? = null)
 
 @Serializable
-private data class LoginResponse(val code: Int = -1, val profile: ProfileInfo? = null)
+private data class LoginResponse(
+    val code: Int = -1,
+    val profile: ProfileInfo? = null,
+    val account: AccountInfo? = null,
+)
+
+@Serializable
+private data class AccountInfo(val id: Long = 0)
 
 @Serializable
 data class ProfileInfo(val nickname: String = "", val avatarUrl: String = "")
@@ -78,7 +85,8 @@ class LoginViewModel(
 
                 if (result != null && result.code == 200 && result.profile != null) {
                     cookieStore.saveCookie(c)
-                    userSession.setUser(result.profile.nickname, result.profile.avatarUrl)
+                    val uid = result.account?.id ?: 0
+                    userSession.setUser(uid, result.profile.nickname, result.profile.avatarUrl)
                     _state.update {
                         it.copy(
                             isLoading = false,
