@@ -17,16 +17,21 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.MusicNote
-import androidx.compose.material.icons.filled.Search
+import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
+import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -38,53 +43,97 @@ import androidx.compose.ui.unit.sp
 import coil3.compose.AsyncImage
 import com.example.music_wyy.ui.theme.BackgroundDark
 import com.example.music_wyy.ui.theme.CardDark
+import com.example.music_wyy.ui.theme.DividerDark
 import com.example.music_wyy.ui.theme.NeteaseRed
 import com.example.music_wyy.ui.theme.TextPrimary
 import com.example.music_wyy.ui.theme.TextSecondary
+import com.example.music_wyy.ui.theme.TextTertiary
+import org.koin.compose.viewmodel.koinViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun PlaylistScreen() {
+fun PlaylistScreen(
+    viewModel: PlaylistViewModel = koinViewModel(),
+) {
+    val state by viewModel.state.collectAsState()
+
     Column(modifier = Modifier.fillMaxSize()) {
         TopAppBar(
-            title = {
-                Text(
-                    text = "我的歌单",
-                    fontWeight = FontWeight.Bold,
-                    color = TextPrimary,
-                )
-            },
+            title = { Text("我的歌单", fontWeight = FontWeight.Bold, color = TextPrimary) },
             colors = TopAppBarDefaults.topAppBarColors(containerColor = BackgroundDark),
             actions = {
-                Icon(
-                    imageVector = Icons.Filled.Search,
-                    contentDescription = "搜索",
-                    tint = TextPrimary,
-                    modifier = Modifier.padding(end = 16.dp),
-                )
+                IconButton(onClick = { viewModel.loadPlaylists() }) {
+                    Icon(
+                        imageVector = Icons.Filled.Refresh,
+                        contentDescription = "刷新",
+                        tint = TextPrimary,
+                    )
+                }
             },
         )
 
-        // 统计数据
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 16.dp, vertical = 8.dp),
-            horizontalArrangement = Arrangement.spacedBy(12.dp),
-        ) {
-            StatCard(label = "歌单", value = "--", modifier = Modifier.weight(1f))
-            StatCard(label = "歌曲", value = "--", modifier = Modifier.weight(1f))
-            StatCard(label = "收藏", value = "--", modifier = Modifier.weight(1f))
-        }
-
-        // 歌单列表
-        LazyColumn(
+        PullToRefreshBox(
+            isRefreshing = state.isLoading,
+            onRefresh = { viewModel.loadPlaylists() },
             modifier = Modifier.fillMaxSize(),
-            contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp),
-            verticalArrangement = Arrangement.spacedBy(10.dp),
         ) {
-            items(placeholderPlaylists) { playlist ->
-                PlaylistCard(playlist)
+            if (state.error != null && state.playlists.isEmpty()) {
+                ErrorContent(state.error, onRetry = { viewModel.loadPlaylists() })
+            } else {
+                LazyColumn(
+                    modifier = Modifier.fillMaxSize(),
+                    contentPadding = PaddingValues(16.dp),
+                    verticalArrangement = Arrangement.spacedBy(10.dp),
+                ) {
+                    // 统计卡片
+                    item {
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(bottom = 4.dp),
+                            horizontalArrangement = Arrangement.spacedBy(12.dp),
+                        ) {
+                            StatCard("歌单", state.totalPlaylists.toString(), Modifier.weight(1f))
+                            StatCard("歌曲", state.totalSongs.toString(), Modifier.weight(1f))
+                            StatCard("收藏", state.playlists.firstOrNull()?.songCount?.toString() ?: "--", Modifier.weight(1f))
+                        }
+                    }
+
+                    item { Spacer(Modifier.height(4.dp)) }
+
+                    if (state.playlists.isEmpty() && !state.isLoading) {
+                        item {
+                            Box(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(40.dp),
+                                contentAlignment = Alignment.Center,
+                            ) {
+                                Text("暂无歌单", color = TextTertiary, fontSize = 14.sp)
+                            }
+                        }
+                    } else {
+                        items(state.playlists, key = { it.id }) { playlist ->
+                            PlaylistCard(playlist)
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun ErrorContent(error: String?, onRetry: () -> Unit) {
+    Box(
+        modifier = Modifier.fillMaxSize(),
+        contentAlignment = Alignment.Center,
+    ) {
+        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+            Text(error ?: "未知错误", color = TextSecondary, fontSize = 14.sp)
+            Spacer(Modifier.height(12.dp))
+            androidx.compose.material3.TextButton(onClick = onRetry) {
+                Text("重试", color = NeteaseRed)
             }
         }
     }
@@ -100,20 +149,12 @@ private fun StatCard(label: String, value: String, modifier: Modifier = Modifier
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(12.dp),
+                .padding(14.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
-            Text(
-                text = value,
-                fontSize = 22.sp,
-                fontWeight = FontWeight.Bold,
-                color = NeteaseRed,
-            )
-            Text(
-                text = label,
-                fontSize = 12.sp,
-                color = TextSecondary,
-            )
+            Text(value, fontSize = 24.sp, fontWeight = FontWeight.Bold, color = NeteaseRed)
+            Spacer(Modifier.height(2.dp))
+            Text(label, fontSize = 12.sp, color = TextSecondary)
         }
     }
 }
@@ -131,10 +172,11 @@ private fun PlaylistCard(playlist: PlaylistItem) {
                 .padding(12.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
+            // 封面
             Box(
                 modifier = Modifier
                     .size(56.dp)
-                    .clip(RoundedCornerShape(8.dp)),
+                    .clip(RoundedCornerShape(10.dp)),
                 contentAlignment = Alignment.Center,
             ) {
                 if (playlist.coverUrl != null) {
@@ -146,9 +188,8 @@ private fun PlaylistCard(playlist: PlaylistItem) {
                     )
                 } else {
                     Icon(
-                        imageVector = Icons.Filled.MusicNote,
-                        contentDescription = null,
-                        tint = NeteaseRed,
+                        Icons.Filled.MusicNote, null,
+                        tint = NeteaseRed.copy(alpha = 0.6f),
                         modifier = Modifier.size(28.dp),
                     )
                 }
@@ -158,7 +199,7 @@ private fun PlaylistCard(playlist: PlaylistItem) {
 
             Column(modifier = Modifier.weight(1f)) {
                 Text(
-                    text = playlist.name,
+                    playlist.name,
                     color = TextPrimary,
                     fontSize = 15.sp,
                     fontWeight = FontWeight.Medium,
@@ -166,26 +207,14 @@ private fun PlaylistCard(playlist: PlaylistItem) {
                     overflow = TextOverflow.Ellipsis,
                 )
                 Spacer(Modifier.height(4.dp))
-                Text(
-                    text = "${playlist.songCount} 首",
-                    color = TextSecondary,
-                    fontSize = 13.sp,
-                )
+                Row {
+                    Text("${playlist.songCount} 首", color = TextSecondary, fontSize = 13.sp)
+                    if (playlist.creator != null) {
+                        Text(" · ", color = TextTertiary, fontSize = 13.sp)
+                        Text(playlist.creator, color = TextSecondary, fontSize = 13.sp)
+                    }
+                }
             }
         }
     }
 }
-
-data class PlaylistItem(
-    val id: String,
-    val name: String,
-    val songCount: Int,
-    val coverUrl: String?,
-)
-
-private val placeholderPlaylists = listOf(
-    PlaylistItem("1", "我喜欢的音乐", 328, null),
-    PlaylistItem("2", "华语经典", 156, null),
-    PlaylistItem("3", "轻音乐 / 纯音乐", 89, null),
-    PlaylistItem("4", "欧美流行", 213, null),
-)

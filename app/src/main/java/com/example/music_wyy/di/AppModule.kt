@@ -66,5 +66,6 @@ val appModule = module {
 
     // ViewModels
     factory { com.example.music_wyy.ui.login.LoginViewModel(get(), get()) }
+    factory { com.example.music_wyy.ui.playlist.PlaylistViewModel(get(), get()) }
 }
 
