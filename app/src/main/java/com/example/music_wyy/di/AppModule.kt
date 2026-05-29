@@ -69,6 +69,7 @@ val appModule = module {
     single { com.example.music_wyy.session.UserSession() }
 
     // ViewModels
+    factory { com.example.music_wyy.ui.home.HomeViewModel(get(), get(), get()) }
     factory { com.example.music_wyy.ui.login.LoginViewModel(get(), get(), get()) }
     factory { com.example.music_wyy.ui.playlist.PlaylistViewModel(get(), get()) }
     factory { com.example.music_wyy.ui.playlist.PlaylistDetailViewModel(get(), get()) }

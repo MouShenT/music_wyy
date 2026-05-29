@@ -7,6 +7,7 @@ import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.navArgument
+import com.example.music_wyy.ui.home.HomeScreen
 import com.example.music_wyy.ui.login.LoginScreen
 import com.example.music_wyy.ui.playlist.PlaylistScreen
 import com.example.music_wyy.ui.playlist.PlaylistDetailScreen
@@ -27,11 +28,14 @@ fun NavGraph(
         composable(Route.Login.route) {
             LoginScreen(
                 onLoginSuccess = {
-                    navController.navigate(Route.Playlists.route) {
+                    navController.navigate(Route.Home.route) {
                         popUpTo(Route.Login.route) { inclusive = true }
                     }
                 },
             )
+        }
+        composable(Route.Home.route) {
+            HomeScreen()
         }
         composable(Route.Playlists.route) {
             PlaylistScreen(

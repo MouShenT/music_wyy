@@ -13,6 +13,7 @@ import androidx.compose.ui.graphics.vector.ImageVector
 
 sealed class Route(val route: String) {
     data object Login : Route("login")
+    data object Home : Route("home")
     data object Playlists : Route("playlists")
     data object Automation : Route("automation")
     data object Profile : Route("profile")
@@ -30,7 +31,7 @@ data class BottomNavItem(
 )
 
 val bottomNavItems = listOf(
-    BottomNavItem("首页", Route.Playlists.route, Icons.Filled.Home, Icons.Outlined.Home),
+    BottomNavItem("首页", Route.Home.route, Icons.Filled.Home, Icons.Outlined.Home),
     BottomNavItem("歌单", Route.Playlists.route, Icons.Filled.LibraryMusic, Icons.Outlined.LibraryMusic),
     BottomNavItem("签到", Route.Automation.route, Icons.Filled.TaskAlt, Icons.Outlined.TaskAlt),
     BottomNavItem("我的", Route.Profile.route, Icons.Filled.Person, Icons.Outlined.Person),
