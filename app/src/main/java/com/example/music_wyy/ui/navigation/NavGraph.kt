@@ -8,8 +8,7 @@ import androidx.navigation.compose.composable
 import com.example.music_wyy.ui.login.LoginScreen
 import com.example.music_wyy.ui.playlist.PlaylistScreen
 import com.example.music_wyy.ui.automation.AutomationScreen
-import com.example.music_wyy.ui.analytics.AnalyticsScreen
-import com.example.music_wyy.ui.settings.SettingsScreen
+import com.example.music_wyy.ui.profile.ProfileScreen
 
 @Composable
 fun NavGraph(
@@ -22,27 +21,26 @@ fun NavGraph(
         modifier = modifier,
     ) {
         composable(Route.Login.route) {
-            LoginScreen(onLoginSuccess = {
-                navController.navigate(Route.Playlists.route) {
-                    popUpTo(Route.Login.route) { inclusive = true }
-                }
-            })
-        }
-        composable(Route.Playlists.route) {
-            PlaylistScreen(
-                onPlaylistClick = { playlistId ->
-                    navController.navigate(Route.PlaylistDetail.create(playlistId))
+            LoginScreen(
+                onLoginSuccess = {
+                    navController.navigate(Route.Playlists.route) {
+                        popUpTo(Route.Login.route) { inclusive = true }
+                    }
                 },
             )
+        }
+        composable(Route.Playlists.route) {
+            PlaylistScreen()
         }
         composable(Route.Automation.route) {
             AutomationScreen()
         }
-        composable(Route.Analytics.route) {
-            AnalyticsScreen()
-        }
-        composable(Route.Settings.route) {
-            SettingsScreen()
+        composable(Route.Profile.route) {
+            ProfileScreen(onLogout = {
+                navController.navigate(Route.Login.route) {
+                    popUpTo(0) { inclusive = true }
+                }
+            })
         }
     }
 }

@@ -376,13 +376,110 @@ Card(shape = MaterialTheme.shapes.medium,
 
 ## 开发环境
 
+### 宿主机 (Windows)
+
 | 工具 | 位置 |
 |------|------|
 | Android Studio | `D:\software\AndroidStudio2025` / `2026` |
 | Android SDK | `D:\software\AndroidStudioData\sdk` (API 36) |
 | JDK 23 | `D:\software\jdk\jdk23` |
 | Gradle | wrapper 9.3.1（`.gradle` 已缓存） |
-| NeteaseCloudMusicApi | 本地 `npm start` → `localhost:3000` |
+| 共享文件夹 | `D:\aaopenclow-share` — 与 Kali 虚拟机双向共享 |
+
+### Kali 虚拟机 (API 后端部署目标)
+
+| 项目 | 值 |
+|------|-----|
+| **OS** | Kali GNU/Linux Rolling 2025.4 |
+| **Kernel** | 6.18.5+kali-amd64 |
+| **IP** | 192.168.117.149 (内网) |
+| **磁盘** | 79G / 62G 已用 / 14G 可用 (83%) |
+| **内存** | 7.7 GiB |
+| **Python** | 3.13.11 (requests 2.32.5) |
+| **Node.js** | v22.22.0 |
+| **OpenClaw** | 运行在端口 18789 (PID 1343) |
+
+#### NeteaseCloudMusicApi（Docker 部署）
+
+```
+容器名: netease_api
+镜像:   binaryify/netease_cloud_music_api:latest
+版本:   4.27.0 (npm 最新 4.32.0)
+端口:   3000
+网络:   --network host (必须 host 模式，Alpine musl DNS 兼容性)
+DNS:    223.5.5.5, 114.114.114.114
+```
+
+**管理命令** (在 Kali 上执行):
+```bash
+# 启动
+docker rm -f netease_api 2>/dev/null
+docker run -d --network host --name netease_api \
+  --dns 223.5.5.5 --dns 114.114.114.114 \
+  binaryify/netease_cloud_music_api
+
+# 查看日志
+docker logs netease_api
+
+# 验证运行
+curl -s "http://localhost:3000/"
+# 预期: 返回 HTML 页面 (server running @ http://localhost:3000)
+
+# 重启
+docker restart netease_api
+```
+
+**认证方式**: Cookie (MUSIC_U)
+- 浏览器登录 https://music.163.com → F12 → Cookies → 复制 MUSIC_U 值
+- 所有 API 请求附带 `?cookie=MUSIC_U=xxx` 参数
+
+**API 调用示例** (Kali 本地):
+```bash
+# 验证登录
+curl -s "http://localhost:3000/login/status?cookie=MUSIC_U=xxx"
+
+# 搜索歌曲
+curl -s "http://localhost:3000/cloudsearch?keywords=歌名+歌手&type=1&limit=5&cookie=MUSIC_U=xxx"
+```
+
+**App 访问**: Android App 通过内网 `http://192.168.117.149:3000` 调用 API（不走公网）。
+
+#### Docker 环境
+
+```
+Docker: 29.2.0
+已运行容器 (12 个):
+  netease_api       - 网易云音乐 API (端口 3000, host 网络)
+  vulfocus-simple   - 漏洞靶场 (端口 8001)
+  arl_* x4          - 资产侦察灯塔
+  nemo3_* x3        - Nemo 安全平台
+  mobsf             - 移动安全框架
+```
+
+#### 网络与代理
+
+```
+ShellCrash 代理:  端口 7890 (HTTP) / 7891 (SOCKS5)
+                  CrashCore 进程 (PID 6656)
+网络连通性:       Baidu ✅ (0.20s) | music.163.com ✅ (0.34s)
+共享文件夹:       /mnt/hgfs/aaopenclow-share (VMware HGFS)
+```
+
+#### 批量操作脚本 (已验证可用)
+
+| 脚本 | 路径 | 功能 |
+|------|------|------|
+| 批量创建歌单 | `/root/batch_create_playlist.py` | 从歌曲列表搜索+创建歌单 (10.4KB) |
+| 补充歌曲到歌单 | `/root/add_offcampus.py` | 搜索新歌并添加到已有歌单 (5.3KB) |
+
+这两个脚本演示了核心工作流: `Cookie 登录 → cloudsearch 逐首搜索 → playlist/create → playlist/tracks 批量添加`。App 开发时参考其 API 调用模式和匹配逻辑。
+
+#### Skill 文件
+
+已创建 `netease-api` Skill (12KB)，包含:
+- Python API 封装类 `NcmAPI` (`/root/.openclaw/workspace/skills/netease-api/scripts/ncm_api.py`)
+- 356 个端点完整目录 (`references/api_modules.md`)
+- 部署/调用/故障排查文档 (`SKILL.md`)
 
 ---
 

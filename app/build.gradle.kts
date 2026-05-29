@@ -76,6 +76,9 @@ dependencies {
     // WorkManager
     implementation(libs.work.runtime.ktx)
 
+    // Image Loading
+    implementation(libs.coil.compose)
+
     // Charts
     implementation(libs.vico.compose.m3)
 
