@@ -29,6 +29,28 @@ interface NeteaseApi {
         @Query("id") id: String,
         @Query("cookie") cookie: String,
     ): ResponseBody
+
+    @GET("/cloudsearch")
+    suspend fun search(
+        @Query("keywords") keywords: String,
+        @Query("type") type: Int = 1,
+        @Query("limit") limit: Int = 5,
+        @Query("cookie") cookie: String,
+    ): ResponseBody
+
+    @GET("/playlist/create")
+    suspend fun createPlaylist(
+        @Query("name") name: String,
+        @Query("cookie") cookie: String,
+    ): ResponseBody
+
+    @GET("/playlist/tracks")
+    suspend fun addTracksToPlaylist(
+        @Query("op") op: String = "add",
+        @Query("pid") pid: String,
+        @Query("tracks") tracks: String,
+        @Query("cookie") cookie: String,
+    ): ResponseBody
 }
 
 @Serializable

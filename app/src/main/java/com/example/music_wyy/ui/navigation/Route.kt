@@ -16,6 +16,7 @@ sealed class Route(val route: String) {
     data object Playlists : Route("playlists")
     data object Automation : Route("automation")
     data object Profile : Route("profile")
+    data object BatchCreate : Route("batch_create")
     data object PlaylistDetail : Route("playlist/{playlistId}") {
         fun create(playlistId: String) = "playlist/$playlistId"
     }

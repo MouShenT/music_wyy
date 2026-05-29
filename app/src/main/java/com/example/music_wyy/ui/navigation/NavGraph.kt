@@ -10,6 +10,7 @@ import androidx.navigation.navArgument
 import com.example.music_wyy.ui.login.LoginScreen
 import com.example.music_wyy.ui.playlist.PlaylistScreen
 import com.example.music_wyy.ui.playlist.PlaylistDetailScreen
+import com.example.music_wyy.ui.playlist.BatchCreateScreen
 import com.example.music_wyy.ui.automation.AutomationScreen
 import com.example.music_wyy.ui.profile.ProfileScreen
 
@@ -37,7 +38,13 @@ fun NavGraph(
                 onPlaylistClick = { playlistId ->
                     navController.navigate(Route.PlaylistDetail.create(playlistId))
                 },
+                onBatchCreate = {
+                    navController.navigate(Route.BatchCreate.route)
+                },
             )
+        }
+        composable(Route.BatchCreate.route) {
+            BatchCreateScreen(onBack = { navController.popBackStack() })
         }
         composable(Route.Automation.route) {
             AutomationScreen()

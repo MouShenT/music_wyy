@@ -16,15 +16,18 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.MusicNote
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
@@ -54,11 +57,13 @@ import org.koin.compose.viewmodel.koinViewModel
 @Composable
 fun PlaylistScreen(
     onPlaylistClick: (String) -> Unit = {},
+    onBatchCreate: () -> Unit = {},
     viewModel: PlaylistViewModel = koinViewModel(),
 ) {
     val state by viewModel.state.collectAsState()
 
-    Column(modifier = Modifier.fillMaxSize()) {
+    Box(modifier = Modifier.fillMaxSize()) {
+        Column(modifier = Modifier.fillMaxSize()) {
         TopAppBar(
             title = { Text("我的歌单", fontWeight = FontWeight.Bold, color = TextPrimary) },
             colors = TopAppBarDefaults.topAppBarColors(containerColor = BackgroundDark),
@@ -120,6 +125,17 @@ fun PlaylistScreen(
                     }
                 }
             }
+        }
+        }
+
+        FloatingActionButton(
+            onClick = onBatchCreate,
+            modifier = Modifier
+                .align(Alignment.BottomEnd)
+                .padding(16.dp),
+            containerColor = NeteaseRed,
+        ) {
+            Icon(Icons.Filled.Add, null, tint = TextPrimary)
         }
     }
 }
