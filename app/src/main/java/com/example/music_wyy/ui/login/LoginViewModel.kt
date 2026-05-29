@@ -47,8 +47,9 @@ class LoginViewModel(
         viewModelScope.launch {
             cookieStore.cookie.collect { savedCookie ->
                 if (!savedCookie.isNullOrBlank() && !_state.value.isLoggedIn) {
-                    _state.update { it.copy(cookie = savedCookie) }
-                    login(savedCookie)
+                    val stripped = savedCookie.removePrefix("MUSIC_U=").trim()
+                    _state.update { it.copy(cookie = stripped) }
+                    login(stripped)
                 }
             }
         }
@@ -59,8 +60,9 @@ class LoginViewModel(
     }
 
     fun login(cookie: String? = null) {
-        val c = cookie ?: _state.value.cookie
-        if (c.isBlank()) return
+        val raw = cookie ?: _state.value.cookie
+        if (raw.isBlank()) return
+        val c = raw.removePrefix("MUSIC_U=").trim()
 
         viewModelScope.launch {
             _state.update { it.copy(isLoading = true, error = null) }

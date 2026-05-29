@@ -88,8 +88,8 @@ fun LoginScreen(
             value = state.cookie,
             onValueChange = viewModel::onCookieChange,
             modifier = Modifier.fillMaxWidth(),
-            label = { Text("粘贴 Cookie (MUSIC_U)", color = TextSecondary) },
-            placeholder = { Text("MUSIC_U=xxxxxxxxxxxxx...", color = TextTertiary) },
+            label = { Text("粘贴 Cookie", color = TextSecondary) },
+            placeholder = { Text("粘贴从浏览器复制的 Cookie...", color = TextTertiary) },
             colors = OutlinedTextFieldDefaults.colors(
                 focusedTextColor = TextPrimary,
                 unfocusedTextColor = TextPrimary,
@@ -107,7 +107,7 @@ fun LoginScreen(
 
         Spacer(Modifier.height(8.dp))
         Text(
-            text = "浏览器登录 music.163.com → F12 → Cookies → 复制 MUSIC_U",
+            text = "浏览器登录 music.163.com → F12 → Cookies → 复制 Cookie 值",
             fontSize = 12.sp,
             color = TextTertiary,
             textAlign = TextAlign.Center,
