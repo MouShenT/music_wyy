@@ -53,6 +53,7 @@ import org.koin.compose.viewmodel.koinViewModel
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun PlaylistScreen(
+    onPlaylistClick: (String) -> Unit = {},
     viewModel: PlaylistViewModel = koinViewModel(),
 ) {
     val state by viewModel.state.collectAsState()
@@ -114,7 +115,7 @@ fun PlaylistScreen(
                         }
                     } else {
                         items(state.playlists, key = { it.id }) { playlist ->
-                            PlaylistCard(playlist)
+                            PlaylistCard(playlist, onClick = { onPlaylistClick(playlist.id) })
                         }
                     }
                 }
@@ -160,11 +161,12 @@ private fun StatCard(label: String, value: String, modifier: Modifier = Modifier
 }
 
 @Composable
-private fun PlaylistCard(playlist: PlaylistItem) {
+private fun PlaylistCard(playlist: PlaylistItem, onClick: () -> Unit = {}) {
     Card(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(12.dp),
         colors = CardDefaults.cardColors(containerColor = CardDark),
+        onClick = onClick,
     ) {
         Row(
             modifier = Modifier

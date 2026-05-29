@@ -23,6 +23,12 @@ interface NeteaseApi {
 
     @GET("/daily_signin")
     suspend fun dailySignin(@Query("cookie") cookie: String): ResponseBody
+
+    @GET("/playlist/detail")
+    suspend fun getPlaylistDetail(
+        @Query("id") id: String,
+        @Query("cookie") cookie: String,
+    ): ResponseBody
 }
 
 @Serializable
