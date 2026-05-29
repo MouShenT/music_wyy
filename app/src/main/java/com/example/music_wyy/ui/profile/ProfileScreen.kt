@@ -18,7 +18,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ChevronRight
-import androidx.compose.material.icons.filled.Logout
+import androidx.compose.material.icons.automirrored.filled.Logout
 import androidx.compose.material.icons.filled.MusicNote
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.Star
@@ -26,23 +26,34 @@ import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import coil3.compose.AsyncImage
 import com.example.music_wyy.ui.theme.CardDark
+import com.example.music_wyy.ui.theme.DividerDark
 import com.example.music_wyy.ui.theme.NeteaseRed
 import com.example.music_wyy.ui.theme.TextPrimary
 import com.example.music_wyy.ui.theme.TextSecondary
+import com.example.music_wyy.ui.theme.TextTertiary
+import org.koin.compose.viewmodel.koinViewModel
 
 @Composable
-fun ProfileScreen(onLogout: () -> Unit = {}) {
+fun ProfileScreen(
+    viewModel: ProfileViewModel = koinViewModel(),
+    onLogout: () -> Unit = {},
+) {
+    val sessionState by viewModel.sessionState.collectAsState()
+
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -63,25 +74,34 @@ fun ProfileScreen(onLogout: () -> Unit = {}) {
                     .background(NeteaseRed),
                 contentAlignment = Alignment.Center,
             ) {
-                Icon(
-                    imageVector = Icons.Filled.MusicNote,
-                    contentDescription = null,
-                    tint = TextPrimary,
-                    modifier = Modifier.size(32.dp),
-                )
+                if (sessionState.avatarUrl != null) {
+                    AsyncImage(
+                        model = sessionState.avatarUrl,
+                        contentDescription = null,
+                        modifier = Modifier.fillMaxSize(),
+                        contentScale = ContentScale.Crop,
+                    )
+                } else {
+                    Icon(
+                        imageVector = Icons.Filled.MusicNote,
+                        contentDescription = null,
+                        tint = TextPrimary,
+                        modifier = Modifier.size(32.dp),
+                    )
+                }
             }
             Spacer(Modifier.width(16.dp))
             Column {
                 Text(
-                    text = "未登录",
+                    text = sessionState.nickname ?: "未登录",
                     fontSize = 20.sp,
                     fontWeight = FontWeight.Bold,
                     color = TextPrimary,
                 )
                 Text(
-                    text = "登录后查看个人信息",
+                    text = if (sessionState.isLoggedIn) "网易云音乐用户" else "登录后查看个人信息",
                     fontSize = 13.sp,
-                    color = TextSecondary,
+                    color = if (sessionState.isLoggedIn) TextSecondary else TextTertiary,
                 )
             }
         }
@@ -95,26 +115,31 @@ fun ProfileScreen(onLogout: () -> Unit = {}) {
             colors = CardDefaults.cardColors(containerColor = CardDark),
         ) {
             ProfileMenuItem(icon = Icons.Filled.Star, title = "我的收藏", subtitle = "收藏的歌单和歌曲")
-            HorizontalDivider(color = com.example.music_wyy.ui.theme.DividerDark)
+            HorizontalDivider(color = DividerDark)
             ProfileMenuItem(icon = Icons.Filled.Settings, title = "设置", subtitle = "API地址、Cookie管理")
         }
 
         Spacer(Modifier.height(24.dp))
 
         // 退出登录
-        Box(
-            modifier = Modifier.fillMaxWidth(),
-            contentAlignment = Alignment.Center,
-        ) {
-            TextButton(onClick = onLogout) {
-                Icon(
-                    imageVector = Icons.Filled.Logout,
-                    contentDescription = null,
-                    tint = NeteaseRed,
-                    modifier = Modifier.size(18.dp),
-                )
-                Spacer(Modifier.width(8.dp))
-                Text("退出登录", color = NeteaseRed, fontSize = 15.sp)
+        if (sessionState.isLoggedIn) {
+            Box(
+                modifier = Modifier.fillMaxWidth(),
+                contentAlignment = Alignment.Center,
+            ) {
+                TextButton(onClick = {
+                    viewModel.logout()
+                    onLogout()
+                }) {
+                    Icon(
+                        imageVector = Icons.AutoMirrored.Filled.Logout,
+                        contentDescription = null,
+                        tint = NeteaseRed,
+                        modifier = Modifier.size(18.dp),
+                    )
+                    Spacer(Modifier.width(8.dp))
+                    Text("退出登录", color = NeteaseRed, fontSize = 15.sp)
+                }
             }
         }
     }

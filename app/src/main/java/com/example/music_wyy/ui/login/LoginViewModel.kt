@@ -4,6 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.music_wyy.data.local.datastore.CookieStore
 import com.example.music_wyy.data.remote.NeteaseApi
+import com.example.music_wyy.session.UserSession
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -30,6 +31,7 @@ data class ProfileInfo(val nickname: String = "", val avatarUrl: String = "")
 class LoginViewModel(
     private val api: NeteaseApi,
     private val cookieStore: CookieStore,
+    private val userSession: UserSession,
 ) : ViewModel() {
 
     private val _state = MutableStateFlow(LoginUiState())
@@ -70,6 +72,7 @@ class LoginViewModel(
 
                 if (result.code == 200 && result.profile != null) {
                     cookieStore.saveCookie(c)
+                    userSession.setUser(result.profile.nickname, result.profile.avatarUrl)
                     _state.update {
                         it.copy(
                             isLoading = false,
@@ -97,6 +100,7 @@ class LoginViewModel(
     fun logout() {
         viewModelScope.launch {
             cookieStore.clearCookie()
+            userSession.clear()
             _state.update { LoginUiState() }
         }
     }

@@ -64,8 +64,13 @@ val appModule = module {
 
     single<PlaylistRepository> { PlaylistRepositoryImpl(get()) }
 
+    // Session
+    single { com.example.music_wyy.session.UserSession() }
+
     // ViewModels
-    factory { com.example.music_wyy.ui.login.LoginViewModel(get(), get()) }
+    factory { com.example.music_wyy.ui.login.LoginViewModel(get(), get(), get()) }
     factory { com.example.music_wyy.ui.playlist.PlaylistViewModel(get(), get()) }
+    factory { com.example.music_wyy.ui.automation.AutomationViewModel(get(), get()) }
+    factory { com.example.music_wyy.ui.profile.ProfileViewModel(get(), get()) }
 }
 
