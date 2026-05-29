@@ -43,7 +43,7 @@ data class PlaylistCreator(val nickname: String = "")
 
 @Serializable
 private data class UserPlaylistResponse(
-    val code: Int = -1,
+    val more: Boolean = false,
     val playlist: List<PlaylistApiItem> = emptyList(),
 )
 
@@ -76,26 +76,22 @@ class PlaylistViewModel(
                 val body = response.string()
                 val result = json.decodeFromString<UserPlaylistResponse>(body)
 
-                if (result.code == 200) {
-                    val playlists = result.playlist.map { item ->
-                        PlaylistItem(
-                            id = item.id.toString(),
-                            name = item.name,
-                            songCount = item.trackCount,
-                            coverUrl = item.coverImgUrl,
-                            creator = item.creator?.nickname,
-                        )
-                    }
-                    _state.update {
-                        it.copy(
-                            isLoading = false,
-                            playlists = playlists,
-                            totalPlaylists = playlists.size,
-                            totalSongs = playlists.sumOf { p -> p.songCount },
-                        )
-                    }
-                } else {
-                    _state.update { it.copy(isLoading = false, error = "获取歌单失败 (code: ${result.code})") }
+                val playlists = result.playlist.map { item ->
+                    PlaylistItem(
+                        id = item.id.toString(),
+                        name = item.name,
+                        songCount = item.trackCount,
+                        coverUrl = item.coverImgUrl,
+                        creator = item.creator?.nickname,
+                    )
+                }
+                _state.update {
+                    it.copy(
+                        isLoading = false,
+                        playlists = playlists,
+                        totalPlaylists = playlists.size,
+                        totalSongs = playlists.sumOf { p -> p.songCount },
+                    )
                 }
             } catch (e: Exception) {
                 _state.update {

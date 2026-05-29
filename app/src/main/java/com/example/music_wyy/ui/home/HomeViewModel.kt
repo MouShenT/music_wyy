@@ -26,7 +26,7 @@ data class HomeUiState(
 @Serializable
 private data class SigninResponse(val code: Int = -1, val point: Int? = null)
 @Serializable
-private data class UserPlaylistResponse(val code: Int = -1, val playlist: List<PlaylistCount> = emptyList())
+private data class UserPlaylistResponse(val more: Boolean = false, val playlist: List<PlaylistCount> = emptyList())
 @Serializable
 private data class PlaylistCount(val trackCount: Int = 0)
 
@@ -61,13 +61,11 @@ class HomeViewModel(
                 val resp = api.getUserPlaylists("", "MUSIC_U=$cookie")
                 val body = resp.string()
                 val result = json.decodeFromString<UserPlaylistResponse>(body)
-                if (result.code == 200) {
-                    _state.update {
-                        it.copy(
-                            totalPlaylists = result.playlist.size,
-                            totalSongs = result.playlist.sumOf { p -> p.trackCount },
-                        )
-                    }
+                _state.update {
+                    it.copy(
+                        totalPlaylists = result.playlist.size,
+                        totalSongs = result.playlist.sumOf { p -> p.trackCount },
+                    )
                 }
 
                 // Check signin status

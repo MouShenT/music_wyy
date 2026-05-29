@@ -23,7 +23,10 @@ data class LoginUiState(
 )
 
 @Serializable
-data class LoginResponse(val code: Int = -1, val profile: ProfileInfo? = null)
+private data class LoginApiResponse(val data: LoginResponse? = null)
+
+@Serializable
+private data class LoginResponse(val code: Int = -1, val profile: ProfileInfo? = null)
 
 @Serializable
 data class ProfileInfo(val nickname: String = "", val avatarUrl: String = "")
@@ -70,9 +73,10 @@ class LoginViewModel(
             try {
                 val response = api.checkLogin("MUSIC_U=$c")
                 val body = response.string()
-                val result = json.decodeFromString<LoginResponse>(body)
+                val apiResp = json.decodeFromString<LoginApiResponse>(body)
+                val result = apiResp.data
 
-                if (result.code == 200 && result.profile != null) {
+                if (result != null && result.code == 200 && result.profile != null) {
                     cookieStore.saveCookie(c)
                     userSession.setUser(result.profile.nickname, result.profile.avatarUrl)
                     _state.update {
