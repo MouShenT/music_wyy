@@ -2,6 +2,7 @@ package com.example.music_wyy.ui.automation
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.example.music_wyy.background.AutomationScheduler
 import com.example.music_wyy.data.local.datastore.CookieStore
 import com.example.music_wyy.data.remote.NeteaseApi
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -41,6 +42,7 @@ private data class SigninResponse(val code: Int = -1, val point: Int? = null, va
 class AutomationViewModel(
     private val api: NeteaseApi,
     private val cookieStore: CookieStore,
+    private val scheduler: AutomationScheduler,
 ) : ViewModel() {
 
     private val _state = MutableStateFlow(AutomationUiState())
@@ -48,9 +50,19 @@ class AutomationViewModel(
 
     private val json = Json { ignoreUnknownKeys = true }
 
+    init {
+        val signTask = _state.value.tasks.firstOrNull { it.id == "sign" }
+        if (signTask?.enabled == true) {
+            scheduler.scheduleDailySignin()
+        }
+    }
+
     fun toggleTask(id: String, enabled: Boolean) {
         _state.update {
             it.copy(tasks = it.tasks.map { t -> if (t.id == id) t.copy(enabled = enabled) else t })
+        }
+        if (id == "sign") {
+            if (enabled) scheduler.scheduleDailySignin() else scheduler.cancelDailySignin()
         }
     }
 

@@ -61,6 +61,7 @@ val appModule = module {
     single<SongDao> { get<AppDatabase>().songDao() }
 
     single { CookieStore(androidContext()) }
+    single { com.example.music_wyy.background.AutomationScheduler(androidContext()) }
 
     single<PlaylistRepository> { PlaylistRepositoryImpl(get()) }
 
@@ -71,7 +72,7 @@ val appModule = module {
     factory { com.example.music_wyy.ui.login.LoginViewModel(get(), get(), get()) }
     factory { com.example.music_wyy.ui.playlist.PlaylistViewModel(get(), get()) }
     factory { com.example.music_wyy.ui.playlist.PlaylistDetailViewModel(get(), get()) }
-    factory { com.example.music_wyy.ui.automation.AutomationViewModel(get(), get()) }
+    factory { com.example.music_wyy.ui.automation.AutomationViewModel(get(), get(), get()) }
     factory { com.example.music_wyy.ui.profile.ProfileViewModel(get(), get()) }
 }
 
