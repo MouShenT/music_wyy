@@ -63,4 +63,8 @@ val appModule = module {
     single { CookieStore(androidContext()) }
 
     single<PlaylistRepository> { PlaylistRepositoryImpl(get()) }
+
+    // ViewModels
+    factory { com.example.music_wyy.ui.login.LoginViewModel(get(), get()) }
 }
+
