@@ -9,32 +9,32 @@ import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.platform.LocalView
 import androidx.core.view.WindowCompat
 
-private val NeteaseDarkColors = darkColorScheme(
-    primary = NeteaseRed,
-    onPrimary = TextOnPrimary,
-    primaryContainer = NeteaseRedDark,
-    onPrimaryContainer = TextOnPrimary,
-    secondary = NeteaseRedLight,
-    onSecondary = TextOnPrimary,
-    secondaryContainer = SurfaceDark4,
-    onSecondaryContainer = TextSecondary,
-    tertiary = NeteaseRedLight,
-    onTertiary = TextOnPrimary,
-    background = SurfaceDark0,
-    onBackground = TextPrimary,
-    surface = SurfaceDark2,
-    onSurface = TextPrimary,
-    surfaceVariant = SurfaceDark4,
-    onSurfaceVariant = TextSecondary,
-    surfaceContainerLow = SurfaceDark1,
-    surfaceContainerHigh = SurfaceDark4,
-    surfaceContainerHighest = SurfaceDark5,
-    error = ErrorRed,
-    onError = TextOnPrimary,
-    errorContainer = ErrorRed.copy(alpha = 0.15f),
-    onErrorContainer = ErrorRed,
-    outline = DividerDark,
-    outlineVariant = DividerDark,
+private val MonochromeDarkColors = darkColorScheme(
+    primary = White,
+    onPrimary = Black,
+    primaryContainer = Gray15,
+    onPrimaryContainer = White,
+    secondary = Gray60,
+    onSecondary = Black,
+    secondaryContainer = Gray12,
+    onSecondaryContainer = Gray80,
+    tertiary = Gray40,
+    onTertiary = Black,
+    background = Black,
+    onBackground = White,
+    surface = Gray08,
+    onSurface = White,
+    surfaceVariant = Gray12,
+    onSurfaceVariant = Gray60,
+    surfaceContainerLow = Gray05,
+    surfaceContainerHigh = Gray15,
+    surfaceContainerHighest = Gray20,
+    error = Gray80,
+    onError = Black,
+    errorContainer = Gray20,
+    onErrorContainer = Gray90,
+    outline = Gray20,
+    outlineVariant = Gray15,
     scrim = ScrimDark,
 )
 
@@ -44,8 +44,8 @@ fun MusicWyyTheme(content: @Composable () -> Unit) {
     if (!view.isInEditMode) {
         SideEffect {
             val window = (view.context as Activity).window
-            window.statusBarColor = SurfaceDark0.toArgb()
-            window.navigationBarColor = SurfaceDark0.toArgb()
+            window.statusBarColor = Black.toArgb()
+            window.navigationBarColor = Black.toArgb()
             WindowCompat.getInsetsController(window, view).apply {
                 isAppearanceLightStatusBars = false
                 isAppearanceLightNavigationBars = false
@@ -54,7 +54,7 @@ fun MusicWyyTheme(content: @Composable () -> Unit) {
     }
 
     MaterialTheme(
-        colorScheme = NeteaseDarkColors,
+        colorScheme = MonochromeDarkColors,
         typography = NeteaseTypography,
         content = content,
     )

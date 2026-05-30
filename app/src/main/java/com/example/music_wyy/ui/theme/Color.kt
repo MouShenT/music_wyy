@@ -2,38 +2,47 @@ package com.example.music_wyy.ui.theme
 
 import androidx.compose.ui.graphics.Color
 
-// ── Brand accent ──
-val NeteaseRed = Color(0xFFE8302A)
-val NeteaseRedDark = Color(0xFFC4201A)
-val NeteaseRedLight = Color(0xFFFF4D40)
-val NeteaseRedSurface = Color(0x1AE8302A)
+// ── B&W Minimalist Palette ──
+val White = Color(0xFFFFFFFF)
+val Gray95 = Color(0xFFF2F2F2)
+val Gray90 = Color(0xFFE5E5E5)
+val Gray80 = Color(0xFFCCCCCC)
+val Gray60 = Color(0xFF999999)
+val Gray50 = Color(0xFF808080)
+val Gray40 = Color(0xFF666666)
+val Gray30 = Color(0xFF4D4D4D)
+val Gray25 = Color(0xFF3A3A3A)
+val Gray20 = Color(0xFF333333)
+val Gray15 = Color(0xFF262626)
+val Gray12 = Color(0xFF1F1F1F)
+val Gray10 = Color(0xFF1A1A1A)
+val Gray08 = Color(0xFF141414)
+val Gray05 = Color(0xFF0D0D0D)
+val Black = Color(0xFF000000)
 
-// ── Dark surface hierarchy (layered elevation) ──
-val SurfaceDark0 = Color(0xFF0A0A0A)
-val SurfaceDark1 = Color(0xFF101010)
-val SurfaceDark2 = Color(0xFF161616)
-val SurfaceDark3 = Color(0xFF1E1E1E)
-val SurfaceDark4 = Color(0xFF262626)
-val SurfaceDark5 = Color(0xFF303030)
-
-// ── Semantic colors ──
-val SuccessGreen = Color(0xFF4CAF50)
-val WarningAmber = Color(0xFFFFB74D)
-val ErrorRed = Color(0xFFEF5350)
-val InfoBlue = Color(0xFF42A5F5)
-
-// ── Text ──
-val TextPrimary = Color(0xFFF5F5F5)
-val TextSecondary = Color(0xFFAAAAAA)
-val TextTertiary = Color(0xFF707070)
-val TextOnPrimary = Color(0xFFFFFFFF)
-
-// ── Overlays / Scrims ──
-val ScrimDark = Color(0x99000000)
+// ── Semantic tokens ──
+val Accent = White
+val SuccessGray = Gray60
+val ErrorBright = Gray90
 val DividerDark = Color(0x1FFFFFFF)
 
-// ── Backwards-compat aliases ──
-val BackgroundDark = SurfaceDark0
-val SurfaceDark = SurfaceDark2
-val CardDark = SurfaceDark4
-val CardDarkHover = SurfaceDark5
+// ── Backwards-compat aliases (keep existing code compiling) ──
+val NeteaseRed = White
+val NeteaseRedDark = Gray80
+val NeteaseRedLight = Gray60
+val NeteaseRedSurface = Color(0x1AFFFFFF)
+val SurfaceDark0 = Black
+val SurfaceDark1 = Gray05
+val SurfaceDark2 = Gray08
+val SurfaceDark3 = Gray10
+val SurfaceDark4 = Gray15
+val SurfaceDark5 = Gray20
+val BackgroundDark = Black
+val SurfaceDark = Gray08
+val CardDark = Gray12
+val CardDarkHover = Gray15
+val TextPrimary = White
+val TextSecondary = Gray60
+val TextTertiary = Gray40
+val TextOnPrimary = Black
+val ScrimDark = Color(0x99000000)

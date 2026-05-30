@@ -1,12 +1,7 @@
 package com.example.music_wyy.ui.playlist
 
 import android.content.Intent
-import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.core.tween
-import androidx.compose.animation.fadeIn
-import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -31,6 +26,7 @@ import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.Share
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -43,17 +39,13 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.drawWithContent
-import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import coil3.compose.AsyncImage
 import org.koin.compose.viewmodel.koinViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -142,74 +134,34 @@ fun PlaylistDetailScreen(
                         LazyColumn(
                             modifier = Modifier.fillMaxSize(),
                             contentPadding = PaddingValues(
-                                start = 16.dp,
-                                end = 16.dp,
-                                top = 16.dp,
-                                bottom = 72.dp,
+                                start = 16.dp, end = 16.dp, top = 4.dp, bottom = 72.dp,
                             ),
-                            verticalArrangement = Arrangement.spacedBy(4.dp),
+                            verticalArrangement = Arrangement.spacedBy(0.dp),
                         ) {
-                            // Playlist header
+                            // Playlist header — text only, no cover
                             item {
-                                Row(
+                                Column(
                                     modifier = Modifier
                                         .fillMaxWidth()
-                                        .padding(bottom = 20.dp),
-                                    verticalAlignment = Alignment.Top,
+                                        .padding(bottom = 20.dp, top = 8.dp),
                                 ) {
-                                    Box(
-                                        modifier = Modifier
-                                            .size(120.dp)
-                                            .clip(RoundedCornerShape(14.dp)),
-                                        contentAlignment = Alignment.Center,
-                                    ) {
-                                        if (state.coverUrl != null) {
-                                            AsyncImage(
-                                                model = state.coverUrl,
-                                                contentDescription = null,
-                                                modifier = Modifier.fillMaxSize(),
-                                                contentScale = ContentScale.Crop,
-                                            )
-                                        } else {
-                                            Box(
-                                                modifier = Modifier.fillMaxSize()
-                                                    .background(
-                                                        Brush.linearGradient(
-                                                            listOf(
-                                                                MaterialTheme.colorScheme.primary.copy(alpha = 0.3f),
-                                                                MaterialTheme.colorScheme.primary.copy(alpha = 0.08f),
-                                                            )
-                                                        )
-                                                    ),
-                                                contentAlignment = Alignment.Center,
-                                            ) {
-                                                Icon(
-                                                    Icons.Filled.MusicNote, null,
-                                                    tint = MaterialTheme.colorScheme.primary.copy(alpha = 0.5f),
-                                                    modifier = Modifier.size(48.dp),
-                                                )
-                                            }
-                                        }
-                                    }
-                                    Spacer(Modifier.width(16.dp))
-                                    Column(modifier = Modifier.weight(1f).padding(top = 4.dp)) {
-                                        Text(
-                                            state.name,
-                                            color = MaterialTheme.colorScheme.onSurface,
-                                            style = MaterialTheme.typography.headlineSmall,
-                                            fontWeight = FontWeight.Bold,
-                                        )
-                                        Spacer(Modifier.height(8.dp))
+                                    Text(
+                                        state.name,
+                                        color = MaterialTheme.colorScheme.onSurface,
+                                        style = MaterialTheme.typography.headlineSmall,
+                                        fontWeight = FontWeight.Bold,
+                                    )
+                                    Spacer(Modifier.height(6.dp))
+                                    Row(verticalAlignment = Alignment.CenterVertically) {
                                         Text(
                                             "${state.songs.size} 首歌曲",
                                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                                             style = MaterialTheme.typography.bodyMedium,
                                         )
-                                        Spacer(Modifier.height(4.dp))
                                         if (state.songs.isNotEmpty()) {
                                             Text(
-                                                "总时长: ${formatTotalDuration(state.songs.sumOf { it.duration.toLong() })}",
-                                                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.4f),
+                                                " · 总时长 ${formatTotalDuration(state.songs.sumOf { it.duration.toLong() })}",
+                                                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.35f),
                                                 style = MaterialTheme.typography.labelSmall,
                                             )
                                         }
@@ -217,20 +169,26 @@ fun PlaylistDetailScreen(
                                 }
                             }
 
+                            // Divider
+                            item {
+                                HorizontalDivider(
+                                    color = MaterialTheme.colorScheme.outline,
+                                    modifier = Modifier.padding(bottom = 8.dp),
+                                )
+                            }
+
                             // Song list
                             itemsIndexed(state.songs, key = { _, song -> song.id }) { index, song ->
-                                Box(Modifier) {
-                                    SongRow(
-                                        index = index + 1,
-                                        song = song,
-                                        onPlay = {
-                                            onPlaySong(state.songs, state.coverUrl, song.id)
-                                        },
-                                        onLyric = {
-                                            onPlaySong(state.songs, state.coverUrl, song.id)
-                                        },
-                                    )
-                                }
+                                SongRow(
+                                    index = index + 1,
+                                    song = song,
+                                    onPlay = {
+                                        onPlaySong(state.songs, state.coverUrl, song.id)
+                                    },
+                                    onLyric = {
+                                        onPlaySong(state.songs, state.coverUrl, song.id)
+                                    },
+                                )
                             }
                         }
                     }
@@ -249,7 +207,7 @@ private fun SongRow(
 ) {
     val minutes = song.duration / 1000 / 60
     val seconds = (song.duration / 1000) % 60
-    val dividerColor = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.15f)
+    val dividerColor = MaterialTheme.colorScheme.outline
 
     Row(
         modifier = Modifier
@@ -270,18 +228,17 @@ private fun SongRow(
     ) {
         Text(
             "%02d".format(index),
-            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f),
+            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.4f),
             style = MaterialTheme.typography.bodySmall,
             modifier = Modifier.width(28.dp),
         )
-        Spacer(Modifier.width(8.dp))
+        Spacer(Modifier.width(4.dp))
 
-        // Play button
-        IconButton(onClick = onPlay, modifier = Modifier.size(44.dp)) {
+        IconButton(onClick = onPlay, modifier = Modifier.size(40.dp)) {
             Icon(
                 Icons.Filled.PlayArrow, "播放",
                 tint = MaterialTheme.colorScheme.primary,
-                modifier = Modifier.size(24.dp),
+                modifier = Modifier.size(22.dp),
             )
         }
 
@@ -291,6 +248,7 @@ private fun SongRow(
                 song.name,
                 color = MaterialTheme.colorScheme.onSurface,
                 style = MaterialTheme.typography.bodyMedium,
+                fontWeight = FontWeight.Medium,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
             )
@@ -304,19 +262,18 @@ private fun SongRow(
             )
         }
 
-        // Lyrics button
-        IconButton(onClick = onLyric, modifier = Modifier.size(40.dp)) {
+        IconButton(onClick = onLyric, modifier = Modifier.size(36.dp)) {
             Icon(
                 Icons.Filled.Lyrics, "歌词",
                 tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                modifier = Modifier.size(20.dp),
+                modifier = Modifier.size(18.dp),
             )
         }
 
-        Spacer(Modifier.width(4.dp))
+        Spacer(Modifier.width(2.dp))
         Text(
             if (song.duration > 0) "%d:%02d".format(minutes, seconds) else "",
-            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f),
+            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.4f),
             style = MaterialTheme.typography.labelMedium,
         )
     }

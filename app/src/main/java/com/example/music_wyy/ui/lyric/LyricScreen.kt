@@ -40,6 +40,7 @@ import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Slider
 import androidx.compose.material3.SliderDefaults
 import androidx.compose.material3.Text
@@ -68,12 +69,7 @@ import androidx.compose.ui.unit.sp
 import com.example.music_wyy.ui.player.PlayerViewModel
 import com.example.music_wyy.ui.player.PlayMode
 import com.example.music_wyy.ui.player.PlayingSong
-import com.example.music_wyy.ui.theme.BackgroundDark
-import com.example.music_wyy.ui.theme.CardDark
-import com.example.music_wyy.ui.theme.NeteaseRed
-import com.example.music_wyy.ui.theme.TextPrimary
-import com.example.music_wyy.ui.theme.TextSecondary
-import com.example.music_wyy.ui.theme.TextTertiary
+import com.example.music_wyy.ui.theme.Black
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.filter
@@ -105,31 +101,25 @@ fun LyricScreen(
     val scope = rememberCoroutineScope()
     val listState = rememberLazyListState()
 
-    // Display info from player state (reacts to next/prev), fallback to nav params on initial entry
     val currentId = playerState.currentSong?.id ?: songId
     val displayName = playerState.currentSong?.name ?: songName
     val displayArtist = playerState.currentSong?.artist ?: artist
 
-    // Load lyrics whenever the current song changes (handles next/prev in playlist)
     LaunchedEffect(currentId) {
         lyricViewModel.loadLyric(currentId, displayName, displayArtist)
     }
 
-    // Parse lyrics
     val lines = remember(lyricState.lyricText, lyricState.tlyricText) {
         parseLyrics(lyricState.lyricText, lyricState.tlyricText)
     }
 
-    // Find current line index from playback position
     var currentLineIndex by remember { mutableStateOf(-1) }
 
-    // Track programmatic vs user-initiated scrolls
     var isProgrammaticScroll by remember { mutableStateOf(false) }
     var userScrolledAway by remember { mutableStateOf(false) }
     var autoReturnJob by remember { mutableStateOf<Job?>(null) }
     var scrollAnimJob by remember { mutableStateOf<Job?>(null) }
 
-    // Detect user manually scrolling: isScrollInProgress without programmatic flag
     LaunchedEffect(listState.isScrollInProgress) {
         if (listState.isScrollInProgress && !isProgrammaticScroll) {
             userScrolledAway = true
@@ -142,7 +132,6 @@ fun LyricScreen(
         }
     }
 
-    // Update currentLineIndex from player position
     LaunchedEffect(lines) {
         if (lines.isEmpty()) return@LaunchedEffect
         playerViewModel.state.collect { s ->
@@ -153,7 +142,6 @@ fun LyricScreen(
         }
     }
 
-    // Smooth animated scroll when currentLineIndex changes (separate from update loop)
     LaunchedEffect(lines) {
         if (lines.isEmpty()) return@LaunchedEffect
         snapshotFlow { currentLineIndex }
@@ -178,11 +166,9 @@ fun LyricScreen(
             }
     }
 
-    // Immersive mode: tap lyrics area to toggle bars
     var isImmersive by remember { mutableStateOf(false) }
 
-    Column(modifier = Modifier.fillMaxSize().background(BackgroundDark)) {
-        // Top bar — hides in immersive mode
+    Column(modifier = Modifier.fillMaxSize().background(Black)) {
         AnimatedVisibility(
             visible = !isImmersive,
             enter = fadeIn() + slideInVertically(),
@@ -194,50 +180,58 @@ fun LyricScreen(
                         Text(
                             displayName.ifBlank { "歌词" },
                             fontWeight = FontWeight.Bold,
-                            color = TextPrimary,
+                            color = MaterialTheme.colorScheme.onSurface,
                             maxLines = 1,
                             overflow = TextOverflow.Ellipsis,
                         )
                         if (displayArtist.isNotBlank()) {
-                            Text(displayArtist, fontSize = 12.sp, color = TextSecondary, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                            Text(displayArtist, fontSize = 12.sp,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                maxLines = 1, overflow = TextOverflow.Ellipsis)
                         }
                     }
                 },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, null, tint = TextPrimary)
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, null,
+                            tint = MaterialTheme.colorScheme.onSurface)
                     }
                 },
                 actions = {
                     IconButton(onClick = { lyricViewModel.toggleTranslation() }) {
                         Icon(
                             Icons.Filled.Translate, null,
-                            tint = if (lyricState.showTranslation) NeteaseRed else TextSecondary,
+                            tint = if (lyricState.showTranslation)
+                                MaterialTheme.colorScheme.primary
+                            else MaterialTheme.colorScheme.onSurfaceVariant,
                         )
                     }
                     IconButton(onClick = { lyricViewModel.exportLyric(context) }) {
-                        Icon(Icons.Filled.CloudDownload, null, tint = TextPrimary)
+                        Icon(Icons.Filled.CloudDownload, null,
+                            tint = MaterialTheme.colorScheme.onSurface)
                     }
                 },
-                colors = TopAppBarDefaults.topAppBarColors(containerColor = BackgroundDark),
+                colors = TopAppBarDefaults.topAppBarColors(containerColor = Black),
             )
         }
 
-        // Content area
         if (lyricState.isLoading) {
             Box(modifier = Modifier.weight(1f).fillMaxWidth(), contentAlignment = Alignment.Center) {
-                CircularProgressIndicator(color = NeteaseRed)
+                CircularProgressIndicator(color = MaterialTheme.colorScheme.primary)
             }
         } else if (lines.isEmpty()) {
             Box(modifier = Modifier.weight(1f).fillMaxWidth(), contentAlignment = Alignment.Center) {
                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                    Icon(Icons.Filled.MusicNote, null, tint = TextTertiary, modifier = Modifier.size(48.dp))
+                    Icon(Icons.Filled.MusicNote, null,
+                        tint = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.2f),
+                        modifier = Modifier.size(48.dp))
                     Spacer(Modifier.height(8.dp))
-                    Text(lyricState.error ?: "暂无歌词", color = TextSecondary, fontSize = 14.sp)
+                    Text(lyricState.error ?: "暂无歌词",
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        fontSize = 14.sp)
                 }
             }
         } else {
-            // Lyrics area with tap-to-toggle immersive mode
             Box(
                 modifier = Modifier
                     .weight(1f)
@@ -273,7 +267,8 @@ fun LyricScreen(
                         ) {
                             Text(
                                 line.text.ifBlank { "♪" },
-                                color = if (isCurrent) TextPrimary else TextPrimary.copy(alpha = alpha),
+                                color = if (isCurrent) MaterialTheme.colorScheme.onSurface
+                                    else MaterialTheme.colorScheme.onSurface.copy(alpha = alpha),
                                 fontSize = if (isCurrent) 22.sp else 14.sp,
                                 fontWeight = if (isCurrent) FontWeight.Black else FontWeight.Normal,
                                 textAlign = TextAlign.Center,
@@ -283,7 +278,9 @@ fun LyricScreen(
                                 Spacer(Modifier.height(2.dp))
                                 Text(
                                     line.transText,
-                                    color = if (isCurrent) TextPrimary.copy(alpha = 0.8f) else TextSecondary.copy(alpha = alpha),
+                                    color = if (isCurrent)
+                                        MaterialTheme.colorScheme.onSurface.copy(alpha = 0.8f)
+                                    else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = alpha),
                                     fontSize = 13.sp,
                                     textAlign = TextAlign.Center,
                                 )
@@ -296,7 +293,7 @@ fun LyricScreen(
             }
         }
 
-        // Bottom player bar — hides in immersive mode
+        // Bottom player bar
         AnimatedVisibility(
             visible = !isImmersive && playerState.currentSong != null,
             enter = fadeIn() + slideInVertically(initialOffsetY = { it }),
@@ -309,10 +306,9 @@ fun LyricScreen(
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .background(BackgroundDark)
+                    .background(Black)
                     .padding(top = 8.dp),
             ) {
-                // Seekable progress slider
                 Slider(
                     value = progress,
                     onValueChange = { ratio ->
@@ -320,35 +316,36 @@ fun LyricScreen(
                     },
                     modifier = Modifier.fillMaxWidth().height(20.dp),
                     colors = SliderDefaults.colors(
-                        thumbColor = NeteaseRed,
-                        activeTrackColor = NeteaseRed,
-                        inactiveTrackColor = CardDark,
+                        thumbColor = MaterialTheme.colorScheme.primary,
+                        activeTrackColor = MaterialTheme.colorScheme.primary,
+                        inactiveTrackColor = MaterialTheme.colorScheme.outline,
                     ),
                 )
 
-                // Time labels
                 Row(
                     modifier = Modifier.fillMaxWidth().padding(horizontal = 20.dp),
                     horizontalArrangement = Arrangement.SpaceBetween,
                 ) {
-                    Text(formatMs(playerState.position), color = TextTertiary, fontSize = 11.sp)
-                    Text(formatMs(playerState.duration), color = TextTertiary, fontSize = 11.sp)
+                    Text(formatMs(playerState.position),
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        fontSize = 11.sp)
+                    Text(formatMs(playerState.duration),
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        fontSize = 11.sp)
                 }
 
                 Spacer(Modifier.height(4.dp))
 
-                // Song info + controls
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(horizontal = 12.dp, vertical = 8.dp),
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
-                    // Song info
                     Column(modifier = Modifier.weight(1f)) {
                         Text(
                             playerState.currentSong?.name ?: "",
-                            color = TextPrimary,
+                            color = MaterialTheme.colorScheme.onSurface,
                             fontSize = 15.sp,
                             fontWeight = FontWeight.Medium,
                             maxLines = 1,
@@ -357,23 +354,22 @@ fun LyricScreen(
                         Spacer(Modifier.height(2.dp))
                         Text(
                             playerState.currentSong?.artist ?: "",
-                            color = TextSecondary,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
                             fontSize = 12.sp,
                             maxLines = 1,
                             overflow = TextOverflow.Ellipsis,
                         )
                     }
 
-                    // Play mode toggle
                     val modeIcon: ImageVector = when (playerState.playMode) {
                         PlayMode.LIST -> Icons.Filled.Repeat
                         PlayMode.SHUFFLE -> Icons.Filled.Shuffle
                         PlayMode.SINGLE -> Icons.Filled.RepeatOne
                     }
                     val modeTint = when (playerState.playMode) {
-                        PlayMode.LIST -> TextSecondary
-                        PlayMode.SHUFFLE -> NeteaseRed
-                        PlayMode.SINGLE -> NeteaseRed
+                        PlayMode.LIST -> MaterialTheme.colorScheme.onSurfaceVariant
+                        PlayMode.SHUFFLE -> MaterialTheme.colorScheme.primary
+                        PlayMode.SINGLE -> MaterialTheme.colorScheme.primary
                     }
                     IconButton(
                         onClick = { playerViewModel.cyclePlayMode() },
@@ -384,26 +380,26 @@ fun LyricScreen(
 
                     Spacer(Modifier.width(4.dp))
 
-                    // Prev
                     IconButton(
                         onClick = { playerViewModel.previous() },
                         modifier = Modifier.size(44.dp),
                     ) {
-                        Icon(Icons.Filled.SkipPrevious, null, tint = TextPrimary, modifier = Modifier.size(28.dp))
+                        Icon(Icons.Filled.SkipPrevious, null,
+                            tint = MaterialTheme.colorScheme.onSurface,
+                            modifier = Modifier.size(28.dp))
                     }
 
                     Spacer(Modifier.width(4.dp))
 
-                    // Play / Pause
                     IconButton(
                         onClick = { playerViewModel.togglePlay() },
                         modifier = Modifier
                             .size(52.dp)
-                            .background(NeteaseRed, CircleShape),
+                            .background(MaterialTheme.colorScheme.primary, CircleShape),
                     ) {
                         if (playerState.isLoading) {
                             CircularProgressIndicator(
-                                color = TextPrimary,
+                                color = MaterialTheme.colorScheme.onPrimary,
                                 modifier = Modifier.size(22.dp),
                                 strokeWidth = 2.dp,
                             )
@@ -411,7 +407,7 @@ fun LyricScreen(
                             Icon(
                                 if (playerState.isPlaying) Icons.Filled.Pause else Icons.Filled.PlayArrow,
                                 null,
-                                tint = TextPrimary,
+                                tint = MaterialTheme.colorScheme.onPrimary,
                                 modifier = Modifier.size(30.dp),
                             )
                         }
@@ -419,29 +415,31 @@ fun LyricScreen(
 
                     Spacer(Modifier.width(4.dp))
 
-                    // Next
                     IconButton(
                         onClick = { playerViewModel.next() },
                         modifier = Modifier.size(44.dp),
                     ) {
-                        Icon(Icons.Filled.SkipNext, null, tint = TextPrimary, modifier = Modifier.size(28.dp))
+                        Icon(Icons.Filled.SkipNext, null,
+                            tint = MaterialTheme.colorScheme.onSurface,
+                            modifier = Modifier.size(28.dp))
                     }
 
                     Spacer(Modifier.width(4.dp))
 
-                    // Download
                     IconButton(
                         onClick = { playerViewModel.downloadCurrentSong() },
                         modifier = Modifier.size(40.dp),
                     ) {
                         if (playerState.isDownloading) {
                             CircularProgressIndicator(
-                                color = NeteaseRed,
+                                color = MaterialTheme.colorScheme.primary,
                                 modifier = Modifier.size(20.dp),
                                 strokeWidth = 2.dp,
                             )
                         } else {
-                            Icon(Icons.Filled.Download, "下载", tint = TextSecondary, modifier = Modifier.size(22.dp))
+                            Icon(Icons.Filled.Download, "下载",
+                                tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                                modifier = Modifier.size(22.dp))
                         }
                     }
                 }

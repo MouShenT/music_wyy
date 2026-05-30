@@ -3,7 +3,6 @@ package com.example.music_wyy.ui.home
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
-import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -12,7 +11,6 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -21,14 +19,11 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
-import androidx.compose.foundation.lazy.grid.GridCells
-import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
-import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.AutoAwesome
 import androidx.compose.material.icons.filled.MusicNote
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.Search
@@ -51,14 +46,10 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Brush
-import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import coil3.compose.AsyncImage
 import com.example.music_wyy.ui.player.PlayerViewModel
 import com.example.music_wyy.ui.player.PlayingSong
 import org.koin.compose.viewmodel.koinViewModel
@@ -71,6 +62,9 @@ fun HomeScreen(
     onNavigateToPlaylist: (String) -> Unit = {},
     onNavigateToYunbei: () -> Unit = {},
     onNavigateToMessages: () -> Unit = {},
+    onNavigateToBatchCreate: () -> Unit = {},
+    onNavigateToAiSearch: () -> Unit = {},
+    onNavigateToAutomation: () -> Unit = {},
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
     val playerState by playerViewModel.state.collectAsStateWithLifecycle()
@@ -127,7 +121,7 @@ fun HomeScreen(
         modifier = Modifier.fillMaxSize(),
         contentPadding = PaddingValues(bottom = 24.dp),
     ) {
-        // ── Search bar (always at top) ──
+        // ── Search bar ──
         item(key = "search_bar") {
             Box(
                 modifier = Modifier
@@ -152,13 +146,13 @@ fun HomeScreen(
                                 modifier = Modifier.size(20.dp))
                         },
                         singleLine = true,
-                        shape = RoundedCornerShape(24.dp),
-                        modifier = Modifier.weight(1f).height(52.dp),
+                        shape = RoundedCornerShape(12.dp),
+                        modifier = Modifier.weight(1f).height(48.dp),
                         colors = OutlinedTextFieldDefaults.colors(
                             focusedTextColor = MaterialTheme.colorScheme.onSurface,
                             unfocusedTextColor = MaterialTheme.colorScheme.onSurface,
                             focusedBorderColor = MaterialTheme.colorScheme.primary,
-                            unfocusedBorderColor = MaterialTheme.colorScheme.surfaceVariant,
+                            unfocusedBorderColor = MaterialTheme.colorScheme.outline,
                             cursorColor = MaterialTheme.colorScheme.primary,
                             focusedContainerColor = MaterialTheme.colorScheme.surfaceVariant,
                             unfocusedContainerColor = MaterialTheme.colorScheme.surfaceVariant,
@@ -168,9 +162,10 @@ fun HomeScreen(
                     Button(
                         onClick = { viewModel.search() },
                         enabled = state.searchQuery.isNotBlank() && !state.isSearching,
-                        modifier = Modifier.height(52.dp),
+                        modifier = Modifier.height(48.dp),
                         colors = ButtonDefaults.buttonColors(
                             containerColor = MaterialTheme.colorScheme.primary,
+                            contentColor = MaterialTheme.colorScheme.onPrimary,
                         ),
                         shape = RoundedCornerShape(12.dp),
                     ) {
@@ -186,15 +181,83 @@ fun HomeScreen(
             }
         }
 
+        // ── Top action cards: AI 找歌 + 批量创建 ──
+        item(key = "top_actions") {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp, vertical = 4.dp),
+                horizontalArrangement = Arrangement.spacedBy(12.dp),
+            ) {
+                Card(
+                    modifier = Modifier.weight(1f),
+                    shape = RoundedCornerShape(14.dp),
+                    colors = CardDefaults.cardColors(
+                        containerColor = MaterialTheme.colorScheme.surfaceVariant),
+                    onClick = onNavigateToAiSearch,
+                ) {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 16.dp, vertical = 16.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        Icon(Icons.Filled.AutoAwesome, null,
+                            tint = MaterialTheme.colorScheme.primary,
+                            modifier = Modifier.size(22.dp))
+                        Spacer(Modifier.width(10.dp))
+                        Column {
+                            Text("AI 找歌",
+                                color = MaterialTheme.colorScheme.onSurface,
+                                style = MaterialTheme.typography.titleSmall,
+                                fontWeight = FontWeight.Bold)
+                            Text("用自然语言描述你想找的歌",
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                style = MaterialTheme.typography.labelSmall,
+                                maxLines = 1, overflow = TextOverflow.Ellipsis)
+                        }
+                    }
+                }
+                Card(
+                    modifier = Modifier.weight(1f),
+                    shape = RoundedCornerShape(14.dp),
+                    colors = CardDefaults.cardColors(
+                        containerColor = MaterialTheme.colorScheme.surfaceVariant),
+                    onClick = onNavigateToBatchCreate,
+                ) {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 16.dp, vertical = 16.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        Icon(Icons.Filled.Add, null,
+                            tint = MaterialTheme.colorScheme.primary,
+                            modifier = Modifier.size(22.dp))
+                        Spacer(Modifier.width(10.dp))
+                        Column {
+                            Text("批量创建",
+                                color = MaterialTheme.colorScheme.onSurface,
+                                style = MaterialTheme.typography.titleSmall,
+                                fontWeight = FontWeight.Bold)
+                            Text("一次创建多个歌单",
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                style = MaterialTheme.typography.labelSmall,
+                                maxLines = 1, overflow = TextOverflow.Ellipsis)
+                        }
+                    }
+                }
+            }
+        }
+
         // ── Search results or main content ──
         if (state.searchResults.isNotEmpty() || state.searchMessage != null) {
-            // Search results header
             state.searchMessage?.let { msg ->
                 item(key = "search_msg") {
                     AnimatedVisibility(visible = true, enter = fadeIn(), exit = fadeOut()) {
                         Text(
                             msg,
-                            color = MaterialTheme.colorScheme.secondary,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
                             style = MaterialTheme.typography.bodySmall,
                             modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp),
                         )
@@ -205,13 +268,14 @@ fun HomeScreen(
                 Card(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(horizontal = 16.dp, vertical = 4.dp),
+                        .padding(horizontal = 16.dp, vertical = 3.dp),
                     shape = RoundedCornerShape(10.dp),
                     colors = CardDefaults.cardColors(
                         containerColor = MaterialTheme.colorScheme.surfaceVariant),
                 ) {
                     Row(
-                        modifier = Modifier.padding(12.dp)
+                        modifier = Modifier
+                            .padding(horizontal = 14.dp, vertical = 12.dp)
                             .clickable {
                                 playerViewModel.playSong(
                                     PlayingSong(
@@ -225,24 +289,10 @@ fun HomeScreen(
                             },
                         verticalAlignment = Alignment.CenterVertically,
                     ) {
-                        Box(
-                            modifier = Modifier.size(44.dp).clip(RoundedCornerShape(8.dp)),
-                            contentAlignment = Alignment.Center,
-                        ) {
-                            if (song.coverUrl != null) {
-                                AsyncImage(model = song.coverUrl, contentDescription = null,
-                                    modifier = Modifier.fillMaxSize(),
-                                    contentScale = ContentScale.Crop)
-                            } else {
-                                Icon(Icons.Filled.MusicNote, null,
-                                    tint = MaterialTheme.colorScheme.primary.copy(alpha = 0.5f),
-                                    modifier = Modifier.size(22.dp))
-                            }
-                        }
-                        Spacer(Modifier.width(12.dp))
                         Column(Modifier.weight(1f)) {
                             Text(song.name, color = MaterialTheme.colorScheme.onSurface,
                                 style = MaterialTheme.typography.bodyMedium,
+                                fontWeight = FontWeight.Medium,
                                 maxLines = 1, overflow = TextOverflow.Ellipsis)
                             Text("${song.artist} · ${song.album}",
                                 color = MaterialTheme.colorScheme.onSurfaceVariant,
@@ -254,7 +304,7 @@ fun HomeScreen(
                             modifier = Modifier.size(36.dp),
                         ) {
                             Icon(Icons.Filled.Add, "添加到歌单",
-                                tint = MaterialTheme.colorScheme.primary,
+                                tint = MaterialTheme.colorScheme.onSurfaceVariant,
                                 modifier = Modifier.size(20.dp))
                         }
                     }
@@ -282,10 +332,29 @@ fun HomeScreen(
                 item(key = "recent_list") {
                     LazyRow(
                         contentPadding = PaddingValues(horizontal = 16.dp),
-                        horizontalArrangement = Arrangement.spacedBy(12.dp),
+                        horizontalArrangement = Arrangement.spacedBy(10.dp),
                     ) {
                         items(recentlyPlayed, key = { it.id }) { song ->
-                            RecentSongCard(song = song, playerViewModel = playerViewModel)
+                            Card(
+                                modifier = Modifier.width(130.dp),
+                                shape = RoundedCornerShape(10.dp),
+                                colors = CardDefaults.cardColors(
+                                    containerColor = MaterialTheme.colorScheme.surfaceVariant),
+                                onClick = { playerViewModel.playSong(song) },
+                            ) {
+                                Column(modifier = Modifier.padding(12.dp)) {
+                                    Text(song.name,
+                                        color = MaterialTheme.colorScheme.onSurface,
+                                        style = MaterialTheme.typography.bodySmall,
+                                        fontWeight = FontWeight.Medium,
+                                        maxLines = 1, overflow = TextOverflow.Ellipsis)
+                                    Spacer(Modifier.height(4.dp))
+                                    Text(song.artist,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                        style = MaterialTheme.typography.labelSmall,
+                                        maxLines = 1, overflow = TextOverflow.Ellipsis)
+                                }
+                            }
                         }
                     }
                 }
@@ -320,17 +389,13 @@ fun HomeScreen(
                     }
                 }
             } else if (state.totalPlaylists > 0) {
-                // Use the userPlaylists (loaded from search picker) if available,
-                // otherwise fallback to the count-only data
                 item(key = "playlist_stats") {
                     Row(
                         modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp),
                         horizontalArrangement = Arrangement.spacedBy(12.dp),
                     ) {
-                        PlaylistStatCard("歌单", state.totalPlaylists.toString(),
-                            MaterialTheme.colorScheme.primary, Modifier.weight(1f))
-                        PlaylistStatCard("歌曲", state.totalSongs.toString(),
-                            MaterialTheme.colorScheme.tertiary, Modifier.weight(1f))
+                        StatCard("歌单", state.totalPlaylists.toString(), Modifier.weight(1f))
+                        StatCard("歌曲", state.totalSongs.toString(), Modifier.weight(1f))
                     }
                 }
 
@@ -380,73 +445,7 @@ fun HomeScreen(
 }
 
 @Composable
-private fun RecentSongCard(song: PlayingSong, playerViewModel: PlayerViewModel) {
-    Card(
-        modifier = Modifier.width(120.dp),
-        shape = RoundedCornerShape(12.dp),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
-        onClick = { playerViewModel.playSong(song) },
-    ) {
-        Column {
-            Box(
-                modifier = Modifier.fillMaxWidth().aspectRatio(1f)
-                    .clip(RoundedCornerShape(topStart = 12.dp, topEnd = 12.dp)),
-                contentAlignment = Alignment.Center,
-            ) {
-                if (song.coverUrl != null) {
-                    AsyncImage(model = song.coverUrl, contentDescription = null,
-                        modifier = Modifier.fillMaxSize(), contentScale = ContentScale.Crop)
-                } else {
-                    Box(
-                        modifier = Modifier.fillMaxSize()
-                            .background(
-                                Brush.linearGradient(
-                                    listOf(
-                                        MaterialTheme.colorScheme.primary.copy(alpha = 0.3f),
-                                        MaterialTheme.colorScheme.primary.copy(alpha = 0.1f),
-                                    )
-                                )
-                            ),
-                        contentAlignment = Alignment.Center,
-                    ) {
-                        Icon(Icons.Filled.MusicNote, null,
-                            tint = MaterialTheme.colorScheme.primary,
-                            modifier = Modifier.size(32.dp))
-                    }
-                }
-                Box(
-                    modifier = Modifier.fillMaxSize()
-                        .background(MaterialTheme.colorScheme.scrim.copy(alpha = 0.2f)),
-                    contentAlignment = Alignment.Center,
-                ) {
-                    Icon(Icons.Filled.PlayArrow, "播放",
-                        tint = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.9f),
-                        modifier = Modifier.size(32.dp))
-                }
-            }
-            Column(modifier = Modifier.padding(8.dp)) {
-                Text(song.name,
-                    color = MaterialTheme.colorScheme.onSurface,
-                    style = MaterialTheme.typography.bodySmall,
-                    fontWeight = FontWeight.Medium,
-                    maxLines = 1, overflow = TextOverflow.Ellipsis)
-                Spacer(Modifier.height(2.dp))
-                Text(song.artist,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    style = MaterialTheme.typography.labelSmall,
-                    maxLines = 1, overflow = TextOverflow.Ellipsis)
-            }
-        }
-    }
-}
-
-@Composable
-private fun PlaylistStatCard(
-    label: String,
-    value: String,
-    valueColor: androidx.compose.ui.graphics.Color,
-    modifier: Modifier,
-) {
+private fun StatCard(label: String, value: String, modifier: Modifier) {
     Card(
         modifier = modifier,
         shape = RoundedCornerShape(12.dp),
@@ -458,7 +457,7 @@ private fun PlaylistStatCard(
         ) {
             Text(value,
                 style = MaterialTheme.typography.displaySmall,
-                color = valueColor,
+                color = MaterialTheme.colorScheme.primary,
                 fontWeight = FontWeight.Bold)
             Spacer(Modifier.height(4.dp))
             Text(label,
@@ -486,7 +485,7 @@ private fun QuickActionCard(
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
             Icon(icon, null,
-                tint = MaterialTheme.colorScheme.primary,
+                tint = MaterialTheme.colorScheme.onSurfaceVariant,
                 modifier = Modifier.size(24.dp))
             Spacer(Modifier.height(8.dp))
             Text(label,

@@ -31,6 +31,7 @@ import androidx.compose.material.icons.filled.ChevronRight
 import androidx.compose.material.icons.filled.Cloud
 import androidx.compose.material.icons.filled.MailOutline
 import androidx.compose.material.icons.filled.MusicNote
+import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.Star
 import androidx.compose.material3.ButtonDefaults
@@ -42,18 +43,16 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import coil3.compose.AsyncImage
 import com.example.music_wyy.session.UserSessionState
 import org.koin.compose.viewmodel.koinViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import androidx.compose.runtime.getValue
 
 @Composable
 fun ProfileScreen(
@@ -70,18 +69,57 @@ fun ProfileScreen(
         contentPadding = PaddingValues(horizontal = 16.dp, vertical = 24.dp),
         verticalArrangement = Arrangement.spacedBy(16.dp),
     ) {
-        // ── 用户头像区域 ──
+        // ── User header ──
         item(key = "header") {
             AnimatedVisibility(
                 visible = true,
                 enter = fadeIn(animationSpec = tween(400)) +
                         slideInVertically(animationSpec = tween(400)) { it / 4 },
             ) {
-                ProfileHeader(sessionState = sessionState)
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(vertical = 20.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Box(
+                        modifier = Modifier
+                            .size(64.dp)
+                            .clip(CircleShape)
+                            .background(MaterialTheme.colorScheme.surfaceVariant),
+                        contentAlignment = Alignment.Center,
+                    ) {
+                        Icon(
+                            imageVector = Icons.Filled.Person,
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.3f),
+                            modifier = Modifier.size(32.dp),
+                        )
+                    }
+                    Spacer(Modifier.width(16.dp))
+                    Column {
+                        Text(
+                            text = sessionState.nickname ?: "未登录",
+                            style = MaterialTheme.typography.titleLarge,
+                            fontWeight = FontWeight.Bold,
+                            color = MaterialTheme.colorScheme.onSurface,
+                        )
+                        Spacer(Modifier.height(4.dp))
+                        Text(
+                            text = if (sessionState.isLoggedIn) "网易云音乐用户" else "登录后查看个人信息",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = if (sessionState.isLoggedIn) {
+                                MaterialTheme.colorScheme.onSurfaceVariant
+                            } else {
+                                MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f)
+                            },
+                        )
+                    }
+                }
             }
         }
 
-        // ── 功能卡片 ──
+        // ── Menu card ──
         item(key = "menu_card") {
             AnimatedVisibility(
                 visible = true,
@@ -106,29 +144,20 @@ fun ProfileScreen(
                             subtitle = "查看云贝余额和任务",
                             onClick = onNavigateToYunbei,
                         )
-                        HorizontalDivider(
-                            modifier = Modifier.padding(vertical = 2.dp),
-                            color = MaterialTheme.colorScheme.outline,
-                        )
+                        HorizontalDivider(color = MaterialTheme.colorScheme.outline)
                         ProfileMenuItem(
                             icon = Icons.Filled.MailOutline,
                             title = "我的私信",
                             subtitle = "查看收到的私信",
                             onClick = onNavigateToMessages,
                         )
-                        HorizontalDivider(
-                            modifier = Modifier.padding(vertical = 2.dp),
-                            color = MaterialTheme.colorScheme.outline,
-                        )
+                        HorizontalDivider(color = MaterialTheme.colorScheme.outline)
                         ProfileMenuItem(
                             icon = Icons.Filled.Star,
                             title = "我的收藏",
                             subtitle = "收藏的歌单和歌曲",
                         )
-                        HorizontalDivider(
-                            modifier = Modifier.padding(vertical = 2.dp),
-                            color = MaterialTheme.colorScheme.outline,
-                        )
+                        HorizontalDivider(color = MaterialTheme.colorScheme.outline)
                         ProfileMenuItem(
                             icon = Icons.Filled.Settings,
                             title = "设置",
@@ -140,7 +169,7 @@ fun ProfileScreen(
             }
         }
 
-        // ── 退出登录 ──
+        // ── Logout ──
         item(key = "logout") {
             AnimatedVisibility(
                 visible = sessionState.isLoggedIn,
@@ -150,8 +179,7 @@ fun ProfileScreen(
                         slideOutVertically(animationSpec = tween(300)),
             ) {
                 Box(
-                    modifier = Modifier
-                        .fillMaxWidth(),
+                    modifier = Modifier.fillMaxWidth(),
                     contentAlignment = Alignment.Center,
                 ) {
                     FilledTonalButton(
@@ -177,65 +205,6 @@ fun ProfileScreen(
                     }
                 }
             }
-        }
-    }
-}
-
-@Composable
-private fun ProfileHeader(sessionState: UserSessionState) {
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-                        .padding(vertical = 20.dp),
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        Box(
-            modifier = Modifier
-                .size(64.dp)
-                .clip(CircleShape)
-                .background(
-                    brush = Brush.verticalGradient(
-                        colors = listOf(
-                            MaterialTheme.colorScheme.primary,
-                            MaterialTheme.colorScheme.primaryContainer,
-                        ),
-                    ),
-                ),
-            contentAlignment = Alignment.Center,
-        ) {
-            if (sessionState.avatarUrl != null) {
-                AsyncImage(
-                    model = sessionState.avatarUrl,
-                    contentDescription = null,
-                    modifier = Modifier.fillMaxSize(),
-                    contentScale = ContentScale.Crop,
-                )
-            } else {
-                Icon(
-                    imageVector = Icons.Filled.MusicNote,
-                    contentDescription = null,
-                    tint = MaterialTheme.colorScheme.onPrimary,
-                    modifier = Modifier.size(32.dp),
-                )
-            }
-        }
-        Spacer(Modifier.width(16.dp))
-        Column {
-            Text(
-                text = sessionState.nickname ?: "未登录",
-                style = MaterialTheme.typography.titleLarge,
-                color = MaterialTheme.colorScheme.onSurface,
-            )
-            Spacer(Modifier.height(4.dp))
-            Text(
-                text = if (sessionState.isLoggedIn) "网易云音乐用户" else "登录后查看个人信息",
-                style = MaterialTheme.typography.bodySmall,
-                color = if (sessionState.isLoggedIn) {
-                    MaterialTheme.colorScheme.onSurfaceVariant
-                } else {
-                    MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f)
-                },
-            )
         }
     }
 }
@@ -277,7 +246,7 @@ private fun ProfileMenuItem(
         Icon(
             imageVector = Icons.Filled.ChevronRight,
             contentDescription = null,
-            tint = MaterialTheme.colorScheme.onSurfaceVariant,
+            tint = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.3f),
             modifier = Modifier.size(20.dp),
         )
     }

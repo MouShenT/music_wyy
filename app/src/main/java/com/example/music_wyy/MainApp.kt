@@ -34,10 +34,6 @@ import com.example.music_wyy.ui.navigation.bottomNavItems
 import com.example.music_wyy.ui.player.MiniPlayer
 import com.example.music_wyy.ui.player.PlayerViewModel
 import java.net.URLEncoder
-import com.example.music_wyy.ui.theme.NeteaseRed
-import com.example.music_wyy.ui.theme.BackgroundDark
-import com.example.music_wyy.ui.theme.TextPrimary
-import com.example.music_wyy.ui.theme.TextSecondary
 import org.koin.compose.viewmodel.koinViewModel
 
 @Composable
@@ -102,7 +98,7 @@ fun MainApp() {
                                 selectedTextColor = MaterialTheme.colorScheme.primary,
                                 unselectedIconColor = MaterialTheme.colorScheme.onSurfaceVariant,
                                 unselectedTextColor = MaterialTheme.colorScheme.onSurfaceVariant,
-                                indicatorColor = MaterialTheme.colorScheme.surface,
+                                indicatorColor = MaterialTheme.colorScheme.surfaceVariant,
                             ),
                         )
                     }

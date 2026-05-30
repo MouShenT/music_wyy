@@ -20,8 +20,6 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.automirrored.filled.List
-import androidx.compose.material.icons.automirrored.filled.PlaylistPlay
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Download
 import androidx.compose.material.icons.filled.MusicNote
@@ -38,31 +36,22 @@ import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Slider
 import androidx.compose.material3.SliderDefaults
 import androidx.compose.material3.Text
-import androidx.compose.material3.TopAppBar
-import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
-import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import coil3.compose.AsyncImage
-import com.example.music_wyy.ui.theme.BackgroundDark
-import com.example.music_wyy.ui.theme.CardDark
-import com.example.music_wyy.ui.theme.DividerDark
-import com.example.music_wyy.ui.theme.NeteaseRed
-import com.example.music_wyy.ui.theme.TextPrimary
-import com.example.music_wyy.ui.theme.TextSecondary
-import com.example.music_wyy.ui.theme.TextTertiary
+import com.example.music_wyy.ui.theme.Accent
+import com.example.music_wyy.ui.theme.Black
 import org.koin.compose.viewmodel.koinViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -76,114 +65,114 @@ fun PlayerScreen(
 
     if (song == null) {
         Box(
-            modifier = Modifier.fillMaxSize().background(BackgroundDark),
+            modifier = Modifier.fillMaxSize().background(Black),
             contentAlignment = Alignment.Center,
         ) {
             Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                Icon(Icons.Filled.MusicNote, null, tint = TextTertiary, modifier = Modifier.size(64.dp))
+                Icon(Icons.Filled.MusicNote, null,
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.size(64.dp))
                 Spacer(Modifier.height(16.dp))
-                Text("暂无播放歌曲", color = TextSecondary, fontSize = 15.sp)
+                Text("暂无播放歌曲",
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    fontSize = 15.sp)
                 Spacer(Modifier.height(4.dp))
-                Text("从歌单详情页点击歌曲即可播放", color = TextTertiary, fontSize = 12.sp)
+                Text("从歌单详情页点击歌曲即可播放",
+                    color = MaterialTheme.colorScheme.outline,
+                    fontSize = 12.sp)
             }
         }
         return
     }
 
-    Column(modifier = Modifier.fillMaxSize().background(BackgroundDark)) {
-        // 顶部栏
+    Column(modifier = Modifier.fillMaxSize().background(Black)) {
+        // Top bar
         Row(
             modifier = Modifier.fillMaxWidth().padding(horizontal = 8.dp, vertical = 8.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
             IconButton(onClick = onBack) {
-                Icon(Icons.AutoMirrored.Filled.ArrowBack, null, tint = TextPrimary)
+                Icon(Icons.AutoMirrored.Filled.ArrowBack, null,
+                    tint = MaterialTheme.colorScheme.onSurface)
             }
             Spacer(Modifier.weight(1f))
-            Text("正在播放", color = TextPrimary, fontSize = 14.sp, fontWeight = FontWeight.Medium)
+            Text("正在播放", color = MaterialTheme.colorScheme.onSurface,
+                fontSize = 14.sp, fontWeight = FontWeight.Medium)
             Spacer(Modifier.weight(1f))
-            // 下载按钮
             IconButton(onClick = { viewModel.downloadCurrentSong() }) {
                 if (state.isDownloading) {
                     CircularProgressIndicator(
-                        color = NeteaseRed,
-                        modifier = Modifier.size(18.dp),
-                        strokeWidth = 2.dp,
+                        color = MaterialTheme.colorScheme.primary,
+                        modifier = Modifier.size(18.dp), strokeWidth = 2.dp,
                     )
                 } else {
-                    Icon(Icons.Filled.Download, "下载", tint = TextPrimary)
+                    Icon(Icons.Filled.Download, "下载",
+                        tint = MaterialTheme.colorScheme.onSurface)
                 }
             }
         }
 
-        // 下载结果提示
+        // Download result
         state.downloadResult?.let { msg ->
             Card(
                 modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp),
                 shape = RoundedCornerShape(8.dp),
-                colors = CardDefaults.cardColors(containerColor = NeteaseRed.copy(alpha = 0.15f)),
+                colors = CardDefaults.cardColors(
+                    containerColor = MaterialTheme.colorScheme.surfaceVariant),
             ) {
-                Text(
-                    msg,
-                    color = if (msg.startsWith("下载失败")) TextPrimary else TextPrimary,
+                Text(msg, color = MaterialTheme.colorScheme.onSurface,
                     fontSize = 12.sp,
-                    modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
-                )
+                    modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp))
             }
         }
 
-        // 错误提示
+        // Error
         state.error?.let { err ->
             Card(
                 modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp),
                 shape = RoundedCornerShape(8.dp),
-                colors = CardDefaults.cardColors(containerColor = NeteaseRed.copy(alpha = 0.15f)),
+                colors = CardDefaults.cardColors(
+                    containerColor = MaterialTheme.colorScheme.errorContainer),
             ) {
-                Text(err, color = TextPrimary, fontSize = 12.sp, modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp))
+                Text(err, color = MaterialTheme.colorScheme.onErrorContainer,
+                    fontSize = 12.sp,
+                    modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp))
             }
         }
 
-        // 缓存状态
+        // Cache indicator
         if (song.cachedPath != null) {
             Text(
                 "已缓存 · ${formatBytes(state.cacheSize)}",
-                color = NeteaseRed,
+                color = MaterialTheme.colorScheme.primary,
                 fontSize = 11.sp,
                 modifier = Modifier.padding(horizontal = 16.dp),
             )
         }
 
-        // 专辑封面
+        // Album art area — minimal, no image
         Box(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(horizontal = 48.dp)
+                .padding(horizontal = 64.dp)
                 .weight(0.4f),
             contentAlignment = Alignment.Center,
         ) {
             Box(
                 modifier = Modifier
-                    .size(260.dp)
-                    .clip(RoundedCornerShape(16.dp))
-                    .background(CardDark),
+                    .size(240.dp)
+                    .background(MaterialTheme.colorScheme.surfaceVariant, RoundedCornerShape(16.dp)),
                 contentAlignment = Alignment.Center,
             ) {
-                if (song.coverUrl != null) {
-                    AsyncImage(
-                        model = song.coverUrl,
-                        contentDescription = null,
-                        modifier = Modifier.fillMaxSize(),
-                        contentScale = ContentScale.Crop,
-                    )
-                } else {
-                    Icon(Icons.Filled.MusicNote, null, tint = TextTertiary, modifier = Modifier.size(80.dp))
-                }
+                Icon(Icons.Filled.MusicNote, null,
+                    tint = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.15f),
+                    modifier = Modifier.size(80.dp))
             }
         }
 
         Spacer(Modifier.height(24.dp))
 
-        // 歌曲信息 + 控制
+        // Song info + controls
         Column(
             modifier = Modifier
                 .fillMaxWidth()
@@ -198,7 +187,7 @@ fun PlayerScreen(
                 Column(Modifier.weight(1f)) {
                     Text(
                         song.name,
-                        color = TextPrimary,
+                        color = MaterialTheme.colorScheme.onSurface,
                         fontSize = 20.sp,
                         fontWeight = FontWeight.Bold,
                         maxLines = 1,
@@ -207,7 +196,7 @@ fun PlayerScreen(
                     Spacer(Modifier.height(4.dp))
                     Text(
                         "${song.artist} · ${song.album}",
-                        color = TextSecondary,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
                         fontSize = 13.sp,
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis,
@@ -217,26 +206,33 @@ fun PlayerScreen(
 
             Spacer(Modifier.height(20.dp))
 
-            // 进度条
+            // Progress slider
             Slider(
                 value = state.position.toFloat(),
                 onValueChange = { viewModel.seekTo(it.toLong()) },
                 valueRange = 0f..state.duration.toFloat().coerceAtLeast(1f),
                 modifier = Modifier.fillMaxWidth(),
                 colors = SliderDefaults.colors(
-                    thumbColor = NeteaseRed,
-                    activeTrackColor = NeteaseRed,
-                    inactiveTrackColor = DividerDark,
+                    thumbColor = MaterialTheme.colorScheme.primary,
+                    activeTrackColor = MaterialTheme.colorScheme.primary,
+                    inactiveTrackColor = MaterialTheme.colorScheme.outline,
                 ),
             )
-            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                Text(formatMs(state.position), color = TextTertiary, fontSize = 11.sp)
-                Text(formatMs(state.duration), color = TextTertiary, fontSize = 11.sp)
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+            ) {
+                Text(formatMs(state.position),
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    fontSize = 11.sp)
+                Text(formatMs(state.duration),
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    fontSize = 11.sp)
             }
 
             Spacer(Modifier.height(16.dp))
 
-            // 播放控制
+            // Play controls
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceEvenly,
@@ -251,43 +247,52 @@ fun PlayerScreen(
                         },
                         null,
                         tint = when (state.playMode) {
-                            PlayMode.LIST -> TextTertiary
-                            else -> NeteaseRed
+                            PlayMode.LIST -> MaterialTheme.colorScheme.onSurfaceVariant
+                            else -> MaterialTheme.colorScheme.primary
                         },
                         modifier = Modifier.size(22.dp),
                     )
                 }
                 IconButton(onClick = { viewModel.previous() }, modifier = Modifier.size(48.dp)) {
-                    Icon(Icons.Filled.SkipPrevious, null, tint = TextPrimary, modifier = Modifier.size(32.dp))
+                    Icon(Icons.Filled.SkipPrevious, null,
+                        tint = MaterialTheme.colorScheme.onSurface,
+                        modifier = Modifier.size(32.dp))
                 }
                 IconButton(
                     onClick = { viewModel.togglePlay() },
-                    modifier = Modifier.size(64.dp).background(NeteaseRed, CircleShape),
+                    modifier = Modifier.size(64.dp)
+                        .background(MaterialTheme.colorScheme.primary, CircleShape),
                     enabled = !state.isLoading,
                 ) {
                     if (state.isLoading) {
-                        CircularProgressIndicator(color = TextPrimary, modifier = Modifier.size(28.dp), strokeWidth = 3.dp)
+                        CircularProgressIndicator(
+                            color = MaterialTheme.colorScheme.onPrimary,
+                            modifier = Modifier.size(28.dp), strokeWidth = 3.dp)
                     } else {
                         Icon(
                             if (state.isPlaying) Icons.Filled.Pause else Icons.Filled.PlayArrow,
                             null,
-                            tint = TextPrimary,
+                            tint = MaterialTheme.colorScheme.onPrimary,
                             modifier = Modifier.size(36.dp),
                         )
                     }
                 }
                 IconButton(onClick = { viewModel.next() }, modifier = Modifier.size(48.dp)) {
-                    Icon(Icons.Filled.SkipNext, null, tint = TextPrimary, modifier = Modifier.size(32.dp))
+                    Icon(Icons.Filled.SkipNext, null,
+                        tint = MaterialTheme.colorScheme.onSurface,
+                        modifier = Modifier.size(32.dp))
                 }
                 IconButton(onClick = { viewModel.downloadCurrentSong() }, modifier = Modifier.size(44.dp)) {
-                    Icon(Icons.Filled.Download, "下载", tint = TextTertiary, modifier = Modifier.size(22.dp))
+                    Icon(Icons.Filled.Download, "下载",
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.size(22.dp))
                 }
             }
         }
 
         Spacer(Modifier.height(16.dp))
 
-        // 播放列表
+        // Playlist
         if (state.playlist.isNotEmpty()) {
             LazyColumn(
                 modifier = Modifier.weight(0.25f),
@@ -304,7 +309,8 @@ fun PlayerScreen(
                     ) {
                         Text(
                             songItem.name,
-                            color = if (isCurrent) NeteaseRed else TextPrimary,
+                            color = if (isCurrent) MaterialTheme.colorScheme.primary
+                                else MaterialTheme.colorScheme.onSurface,
                             fontSize = 14.sp,
                             modifier = Modifier.weight(1f),
                             maxLines = 1,
@@ -313,7 +319,9 @@ fun PlayerScreen(
                         Spacer(Modifier.width(8.dp))
                         Text(
                             songItem.artist,
-                            color = if (isCurrent) NeteaseRed.copy(alpha = 0.8f) else TextTertiary,
+                            color = if (isCurrent)
+                                MaterialTheme.colorScheme.primary.copy(alpha = 0.8f)
+                                else MaterialTheme.colorScheme.onSurfaceVariant,
                             fontSize = 12.sp,
                             maxLines = 1,
                             overflow = TextOverflow.Ellipsis,
@@ -323,7 +331,9 @@ fun PlayerScreen(
                             onClick = { viewModel.removeFromPlaylist(songItem.id) },
                             modifier = Modifier.size(28.dp),
                         ) {
-                            Icon(Icons.Filled.Close, null, tint = TextTertiary, modifier = Modifier.size(14.dp))
+                            Icon(Icons.Filled.Close, null,
+                                tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                                modifier = Modifier.size(14.dp))
                         }
                     }
                 }

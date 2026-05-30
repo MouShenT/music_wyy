@@ -54,6 +54,8 @@ fun NavGraph(
                 },
                 onNavigateToYunbei = { navController.navigate(Route.Yunbei.route) },
                 onNavigateToMessages = { navController.navigate(Route.Messages.route) },
+                onNavigateToBatchCreate = { navController.navigate(Route.BatchCreate.route) },
+                onNavigateToAiSearch = { navController.navigate(Route.AiSearch.route) },
             )
         }
         composable(Route.Playlists.route) {
@@ -147,7 +149,6 @@ fun NavGraph(
             val songId = backStackEntry.arguments?.getString("songId") ?: return@composable
             val songName = URLDecoder.decode(backStackEntry.arguments?.getString("songName") ?: "", "UTF-8")
             val artist = URLDecoder.decode(backStackEntry.arguments?.getString("artist") ?: "", "UTF-8")
-            // Get album & coverUrl from PlayerViewModel (set by onPlaySong before navigation)
             val currentSong = playerViewModel.state.value.currentSong
             val album = if (currentSong?.id == songId) currentSong.album else ""
             val coverUrl = if (currentSong?.id == songId) currentSong.coverUrl else null
