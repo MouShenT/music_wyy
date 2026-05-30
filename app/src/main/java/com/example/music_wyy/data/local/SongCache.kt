@@ -40,8 +40,8 @@ class SongCache(
         return File(dir).also { if (!it.exists()) it.mkdirs() }
     }
 
-    fun getCachedFile(songId: String): File? {
-        val dir = File(context.cacheDir, "song_cache")
+    suspend fun getCachedFile(songId: String): File? {
+        val dir = cacheDir()
         if (!dir.exists()) return null
         val cached = dir.resolve(hashKey(songId))
         return if (cached.exists()) cached else null
@@ -105,13 +105,13 @@ class SongCache(
     }
 
     suspend fun getCacheSize(): Long = withContext(Dispatchers.IO) {
-        val dir = File(context.cacheDir, "song_cache")
+        val dir = cacheDir()
         if (!dir.exists()) return@withContext 0L
         dir.listFiles()?.sumOf { it.length() } ?: 0L
     }
 
     suspend fun clearCache() = withContext(Dispatchers.IO) {
-        val dir = File(context.cacheDir, "song_cache")
+        val dir = cacheDir()
         if (dir.exists()) dir.listFiles()?.forEach { it.delete() }
     }
 

@@ -189,23 +189,23 @@ private fun SongRow(
         modifier = Modifier
             .fillMaxWidth()
             .clickable(onClick = onPlay)
-            .padding(vertical = 6.dp),
+            .padding(vertical = 8.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Text(
             "%02d".format(index),
             color = TextTertiary,
             fontSize = 13.sp,
-            modifier = Modifier.width(32.dp),
+            modifier = Modifier.width(28.dp),
         )
-        Spacer(Modifier.width(4.dp))
+        Spacer(Modifier.width(8.dp))
 
         // 播放按钮
-        IconButton(onClick = onPlay, modifier = Modifier.size(28.dp)) {
-            Icon(Icons.Filled.PlayArrow, null, tint = TextPrimary, modifier = Modifier.size(16.dp))
+        IconButton(onClick = onPlay, modifier = Modifier.size(40.dp)) {
+            Icon(Icons.Filled.PlayArrow, "播放", tint = NeteaseRed, modifier = Modifier.size(24.dp))
         }
 
-        Spacer(Modifier.width(4.dp))
+        Spacer(Modifier.width(8.dp))
         Column(modifier = Modifier.weight(1f)) {
             Text(song.name, color = TextPrimary, fontSize = 14.sp, maxLines = 1, overflow = TextOverflow.Ellipsis)
             Spacer(Modifier.height(2.dp))
@@ -219,8 +219,8 @@ private fun SongRow(
         }
 
         // 歌词按钮
-        IconButton(onClick = onLyric, modifier = Modifier.size(28.dp)) {
-            Icon(Icons.Filled.Lyrics, null, tint = TextSecondary, modifier = Modifier.size(16.dp))
+        IconButton(onClick = onLyric, modifier = Modifier.size(40.dp)) {
+            Icon(Icons.Filled.Lyrics, "歌词", tint = TextSecondary, modifier = Modifier.size(20.dp))
         }
 
         Spacer(Modifier.width(4.dp))

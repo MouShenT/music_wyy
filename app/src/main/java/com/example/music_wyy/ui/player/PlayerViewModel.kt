@@ -118,7 +118,11 @@ class PlayerViewModel(
                 var url = song.url
                 if (playUri == null && url == null) {
                     val cookie = cookieStore.cookie.first() ?: ""
-                    val resp = api.getSongUrl(song.id, cookie = "MUSIC_U=$cookie")
+                    val resp = api.getSongUrl(
+                        song.id,
+                        cookie = "MUSIC_U=$cookie; os=pc",
+                        level = "exhigh",
+                    )
                     val body = resp.string()
                     val result = json.decodeFromString<SongUrlResponse>(body)
                     url = result.data?.firstOrNull()?.url
@@ -134,11 +138,11 @@ class PlayerViewModel(
                 }
 
                 if (playUri == null && url == null) {
-                    _state.update { it.copy(isLoading = false, error = "该歌曲暂无播放资源") }
+                    _state.update { it.copy(isLoading = false, error = "该歌曲暂无播放资源（可能无版权或需VIP）") }
                     return@launch
                 }
 
-                val uri = if (playUri != null) Uri.fromFile(File(playUri)) else Uri.parse(url)
+                val uri = if (playUri != null) Uri.fromFile(File(playUri)) else Uri.parse(url!!)
 
                 val mediaItem = MediaItem.Builder()
                     .setMediaId(song.id)
@@ -177,13 +181,19 @@ class PlayerViewModel(
             _state.update { it.copy(isDownloading = true, downloadResult = null) }
             try {
                 val cookie = cookieStore.cookie.first() ?: ""
-                val resp = api.getSongUrl(song.id, cookie = "MUSIC_U=$cookie")
+                val resp = api.getSongUrl(
+                    song.id,
+                    cookie = "MUSIC_U=$cookie; os=pc",
+                    level = "exhigh",
+                )
                 val body = resp.string()
                 val result = json.decodeFromString<SongUrlResponse>(body)
                 val url = result.data?.firstOrNull()?.url
 
                 if (url == null) {
-                    _state.update { it.copy(isDownloading = false, downloadResult = "下载失败: 无播放资源") }
+                    _state.update { it.copy(isDownloading = false, downloadResult = "下载失败: 无播放资源")
+
+                    }
                     return@launch
                 }
 
