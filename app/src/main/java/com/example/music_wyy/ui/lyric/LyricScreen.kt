@@ -269,7 +269,7 @@ fun LyricScreen(
                         ) {
                             Text(
                                 line.text.ifBlank { "♪" },
-                                color = if (isCurrent) NeteaseRed else TextPrimary.copy(alpha = alpha),
+                                color = if (isCurrent) TextPrimary else TextPrimary.copy(alpha = alpha),
                                 fontSize = if (isCurrent) 18.sp else 15.sp,
                                 fontWeight = if (isCurrent) FontWeight.Bold else FontWeight.Normal,
                                 textAlign = TextAlign.Center,
@@ -279,7 +279,7 @@ fun LyricScreen(
                                 Spacer(Modifier.height(2.dp))
                                 Text(
                                     line.transText,
-                                    color = if (isCurrent) NeteaseRed.copy(alpha = 0.8f) else TextSecondary.copy(alpha = alpha),
+                                    color = if (isCurrent) TextPrimary.copy(alpha = 0.8f) else TextSecondary.copy(alpha = alpha),
                                     fontSize = 13.sp,
                                     textAlign = TextAlign.Center,
                                 )
