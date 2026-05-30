@@ -104,20 +104,14 @@ fun LyricScreen(
     val scope = rememberCoroutineScope()
     val listState = rememberLazyListState()
 
-    // Load lyrics and start playback on entry
-    LaunchedEffect(songId) {
-        lyricViewModel.loadLyric(songId, songName, artist)
-        if (playerState.currentSong?.id != songId) {
-            playerViewModel.playSong(
-                PlayingSong(
-                    id = songId,
-                    name = songName,
-                    artist = artist,
-                    album = album,
-                    coverUrl = coverUrl,
-                )
-            )
-        }
+    // Display info from player state (reacts to next/prev), fallback to nav params on initial entry
+    val currentId = playerState.currentSong?.id ?: songId
+    val displayName = playerState.currentSong?.name ?: songName
+    val displayArtist = playerState.currentSong?.artist ?: artist
+
+    // Load lyrics whenever the current song changes (handles next/prev in playlist)
+    LaunchedEffect(currentId) {
+        lyricViewModel.loadLyric(currentId, displayName, displayArtist)
     }
 
     // Parse lyrics
@@ -183,14 +177,14 @@ fun LyricScreen(
                 title = {
                     Column {
                         Text(
-                            songName.ifBlank { "歌词" },
+                            displayName.ifBlank { "歌词" },
                             fontWeight = FontWeight.Bold,
                             color = TextPrimary,
                             maxLines = 1,
                             overflow = TextOverflow.Ellipsis,
                         )
-                        if (artist.isNotBlank()) {
-                            Text(artist, fontSize = 12.sp, color = TextSecondary, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                        if (displayArtist.isNotBlank()) {
+                            Text(displayArtist, fontSize = 12.sp, color = TextSecondary, maxLines = 1, overflow = TextOverflow.Ellipsis)
                         }
                     }
                 },

@@ -11,6 +11,8 @@ import com.example.music_wyy.data.local.SongCache
 import com.example.music_wyy.data.local.datastore.CookieStore
 import com.example.music_wyy.data.remote.NeteaseApi
 import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -59,6 +61,8 @@ class PlayerViewModel(
 
     private var exoPlayer: ExoPlayer? = null
     private val json = Json { ignoreUnknownKeys = true; coerceInputValues = true }
+    private var positionJob: Job? = null
+    private var isTransitioning = false
 
     init {
         viewModelScope.launch {
@@ -69,25 +73,43 @@ class PlayerViewModel(
 
     fun setPlayer(player: ExoPlayer) {
         exoPlayer = player
+        startPositionUpdates()
         player.addListener(object : Player.Listener {
             override fun onIsPlayingChanged(isPlaying: Boolean) {
                 _state.update { it.copy(isPlaying = isPlaying) }
             }
             override fun onPlaybackStateChanged(state: Int) {
                 _state.update { it.copy(isLoading = state == Player.STATE_BUFFERING) }
-                if (state == Player.STATE_ENDED) next()
-            }
-            override fun onPositionDiscontinuity(
-                oldPosition: Player.PositionInfo,
-                newPosition: Player.PositionInfo,
-                reason: Int,
-            ) {
-                _state.update { it.copy(position = player.currentPosition, duration = player.duration) }
+                if (state == Player.STATE_ENDED) {
+                    // Guard: prevent re-entrant calls from rapid state changes
+                    if (!isTransitioning) {
+                        isTransitioning = true
+                        next()
+                    }
+                }
             }
         })
     }
 
+    private fun startPositionUpdates() {
+        positionJob?.cancel()
+        positionJob = viewModelScope.launch {
+            try {
+                while (true) {
+                    val p = exoPlayer ?: break
+                    if (p.isPlaying || p.playbackState == Player.STATE_BUFFERING) {
+                        _state.update { it.copy(position = p.currentPosition, duration = p.duration) }
+                    }
+                    delay(250)
+                }
+            } catch (_: CancellationException) {
+                // coroutine cancelled, stop polling
+            }
+        }
+    }
+
     fun stop() {
+        positionJob?.cancel()
         exoPlayer?.stop()
         exoPlayer?.clearMediaItems()
         _state.update { it.copy(currentSong = null, isPlaying = false, position = 0, duration = 0) }
@@ -127,7 +149,7 @@ class PlayerViewModel(
                     val resp = api.getSongUrl(
                         song.id,
                         cookie = "MUSIC_U=$cookie; os=pc",
-                        level = "exhigh",
+                        level = "lossless",
                     )
                     val body = resp.string()
                     val result = json.decodeFromString<SongUrlResponse>(body)
@@ -145,6 +167,7 @@ class PlayerViewModel(
 
                 if (playUri == null && url == null) {
                     _state.update { it.copy(isLoading = false, error = "该歌曲暂无播放资源（可能无版权或需VIP）") }
+                    isTransitioning = false
                     return@launch
                 }
 
@@ -163,6 +186,7 @@ class PlayerViewModel(
                     )
                     .build()
 
+                exoPlayer?.stop()
                 exoPlayer?.setMediaItem(mediaItem)
                 exoPlayer?.prepare()
                 exoPlayer?.play()
@@ -173,10 +197,13 @@ class PlayerViewModel(
                         isLoading = false,
                     )
                 }
+                isTransitioning = false
             } catch (e: CancellationException) {
+                isTransitioning = false
                 throw e
             } catch (e: Exception) {
                 _state.update { it.copy(isLoading = false, error = "播放失败: ${e.localizedMessage}") }
+                isTransitioning = false
             }
         }
     }
@@ -190,7 +217,7 @@ class PlayerViewModel(
                 val resp = api.getSongUrl(
                     song.id,
                     cookie = "MUSIC_U=$cookie; os=pc",
-                    level = "exhigh",
+                    level = "lossless",
                 )
                 val body = resp.string()
                 val result = json.decodeFromString<SongUrlResponse>(body)
