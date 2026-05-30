@@ -112,23 +112,27 @@ fun NavGraph(
                         )
                     )
                 },
-                onPlaySong = { songId, songName, artist, album, coverUrl ->
-                    playerViewModel.playSong(
+                onPlaySong = { songs, coverUrl, startSongId ->
+                    val playingSongs = songs.map { song ->
                         com.example.music_wyy.ui.player.PlayingSong(
-                            id = songId,
-                            name = songName,
-                            artist = artist,
-                            album = album,
+                            id = song.id,
+                            name = song.name,
+                            artist = song.artists,
+                            album = song.album,
                             coverUrl = coverUrl,
                         )
-                    )
-                    navController.navigate(
-                        Route.Lyric.create(
-                            songId = songId,
-                            songName = URLEncoder.encode(songName, "UTF-8"),
-                            artist = URLEncoder.encode(artist, "UTF-8"),
+                    }
+                    playerViewModel.playPlaylist(playingSongs, startSongId)
+                    val song = songs.find { it.id == startSongId }
+                    if (song != null) {
+                        navController.navigate(
+                            Route.Lyric.create(
+                                songId = startSongId,
+                                songName = URLEncoder.encode(song.name, "UTF-8"),
+                                artist = URLEncoder.encode(song.artists, "UTF-8"),
+                            )
                         )
-                    )
+                    }
                 },
             )
         }

@@ -62,7 +62,7 @@ fun PlaylistDetailScreen(
     playlistId: String,
     onBack: () -> Unit,
     onSongClick: (songId: String, songName: String, artist: String) -> Unit = { _, _, _ -> },
-    onPlaySong: (songId: String, songName: String, artist: String, album: String, coverUrl: String?) -> Unit = { _, _, _, _, _ -> },
+    onPlaySong: (songs: List<SongItem>, coverUrl: String?, startSongId: String) -> Unit = { _, _, _ -> },
     viewModel: PlaylistDetailViewModel = koinViewModel(),
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
@@ -224,10 +224,10 @@ fun PlaylistDetailScreen(
                                         index = index + 1,
                                         song = song,
                                         onPlay = {
-                                            onPlaySong(song.id, song.name, song.artists, song.album, state.coverUrl)
+                                            onPlaySong(state.songs, state.coverUrl, song.id)
                                         },
                                         onLyric = {
-                                            onPlaySong(song.id, song.name, song.artists, song.album, state.coverUrl)
+                                            onPlaySong(state.songs, state.coverUrl, song.id)
                                         },
                                     )
                                 }

@@ -93,6 +93,12 @@ class PlayerViewModel(
         _state.update { it.copy(currentSong = null, isPlaying = false, position = 0, duration = 0) }
     }
 
+    /** Replace entire playlist and start playing from [startSongId]. */
+    fun playPlaylist(songs: List<PlayingSong>, startSongId: String) {
+        _state.update { it.copy(playlist = songs) }
+        songs.find { it.id == startSongId }?.let { playSong(it) }
+    }
+
     fun playSong(song: PlayingSong) {
         // Set currentSong immediately so PlayerScreen shows UI right away
         val playlist = _state.value.playlist.toMutableList()
