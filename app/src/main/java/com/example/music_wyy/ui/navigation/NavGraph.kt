@@ -120,7 +120,13 @@ fun NavGraph(
                             coverUrl = coverUrl,
                         )
                     )
-                    onNavigateToPlayer()
+                    navController.navigate(
+                        Route.Lyric.create(
+                            songId = songId,
+                            songName = URLEncoder.encode(songName, "UTF-8"),
+                            artist = URLEncoder.encode(artist, "UTF-8"),
+                        )
+                    )
                 },
             )
         }
@@ -135,10 +141,16 @@ fun NavGraph(
             val songId = backStackEntry.arguments?.getString("songId") ?: return@composable
             val songName = URLDecoder.decode(backStackEntry.arguments?.getString("songName") ?: "", "UTF-8")
             val artist = URLDecoder.decode(backStackEntry.arguments?.getString("artist") ?: "", "UTF-8")
+            // Get album & coverUrl from PlayerViewModel (set by onPlaySong before navigation)
+            val currentSong = playerViewModel.state.value.currentSong
+            val album = if (currentSong?.id == songId) currentSong.album else ""
+            val coverUrl = if (currentSong?.id == songId) currentSong.coverUrl else null
             LyricScreen(
                 songId = songId,
                 songName = songName,
                 artist = artist,
+                album = album,
+                coverUrl = coverUrl,
                 onBack = { navController.popBackStack() },
             )
         }

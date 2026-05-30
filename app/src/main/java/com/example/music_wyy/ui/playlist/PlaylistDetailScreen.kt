@@ -166,7 +166,7 @@ fun PlaylistDetailScreen(
                             onPlaySong(song.id, song.name, song.artists, song.album, state.coverUrl)
                         },
                         onLyric = {
-                            onSongClick(song.id, song.name, song.artists)
+                            onPlaySong(song.id, song.name, song.artists, song.album, state.coverUrl)
                         },
                     )
                 }
