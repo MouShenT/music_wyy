@@ -263,13 +263,18 @@ fun PlayerScreen(
                 IconButton(
                     onClick = { viewModel.togglePlay() },
                     modifier = Modifier.size(64.dp).background(NeteaseRed, CircleShape),
+                    enabled = !state.isLoading,
                 ) {
-                    Icon(
-                        if (state.isPlaying) Icons.Filled.Pause else Icons.Filled.PlayArrow,
-                        null,
-                        tint = TextPrimary,
-                        modifier = Modifier.size(36.dp),
-                    )
+                    if (state.isLoading) {
+                        CircularProgressIndicator(color = TextPrimary, modifier = Modifier.size(28.dp), strokeWidth = 3.dp)
+                    } else {
+                        Icon(
+                            if (state.isPlaying) Icons.Filled.Pause else Icons.Filled.PlayArrow,
+                            null,
+                            tint = TextPrimary,
+                            modifier = Modifier.size(36.dp),
+                        )
+                    }
                 }
                 IconButton(onClick = { viewModel.next() }, modifier = Modifier.size(48.dp)) {
                     Icon(Icons.Filled.SkipNext, null, tint = TextPrimary, modifier = Modifier.size(32.dp))

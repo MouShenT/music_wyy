@@ -94,9 +94,16 @@ class PlayerViewModel(
     }
 
     fun playSong(song: PlayingSong) {
-        viewModelScope.launch {
-            _state.update { it.copy(isLoading = true, error = null, downloadResult = null) }
+        // Set currentSong immediately so PlayerScreen shows UI right away
+        val playlist = _state.value.playlist.toMutableList()
+        if (playlist.none { it.id == song.id }) {
+            playlist.add(song)
+        }
+        _state.update {
+            it.copy(currentSong = song, isLoading = true, error = null, downloadResult = null, playlist = playlist)
+        }
 
+        viewModelScope.launch {
             try {
                 // 1. Check cache first
                 var playUri: String? = song.cachedPath
@@ -150,15 +157,10 @@ class PlayerViewModel(
                 exoPlayer?.prepare()
                 exoPlayer?.play()
 
-                val playlist = _state.value.playlist.toMutableList()
-                if (playlist.none { it.id == song.id }) {
-                    playlist.add(song)
-                }
                 _state.update {
                     it.copy(
-                        currentSong = song.copy(url = url, cachedPath = playUri),
+                        currentSong = it.currentSong?.copy(url = url, cachedPath = playUri),
                         isLoading = false,
-                        playlist = playlist,
                     )
                 }
             } catch (e: CancellationException) {
@@ -206,24 +208,9 @@ class PlayerViewModel(
         }
     }
 
-    fun clearCache() {
-        viewModelScope.launch {
-            songCache.clearCache()
-            refreshCacheSize()
-        }
-    }
-
     private suspend fun refreshCacheSize() {
         val size = songCache.getCacheSize()
         _state.update { it.copy(cacheSize = size) }
-    }
-
-    fun addToPlaylist(song: PlayingSong) {
-        _state.update { state ->
-            val list = state.playlist.toMutableList()
-            if (list.none { it.id == song.id }) list.add(song)
-            state.copy(playlist = list)
-        }
     }
 
     fun togglePlay() {
