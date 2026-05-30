@@ -143,14 +143,18 @@ fun LyricScreen(
     LaunchedEffect(lines) {
         if (lines.isEmpty()) return@LaunchedEffect
         playerViewModel.state.collect { s ->
-            val idx = if (lines.isEmpty()) -1 else lines.indexOfLast { it.timeMs <= s.position.toInt() }
+            val idx = lines.indexOfLast { it.timeMs <= s.position.toInt() }
             if (idx != currentLineIndex) {
                 currentLineIndex = idx
                 if (idx >= 0 && !userScrolledAway) {
-                    val target = (idx - 3).coerceAtLeast(0) + 1
+                    val viewportH = listState.layoutInfo.viewportSize.height
+                    val centerOffset = -(viewportH / 3)
                     isProgrammaticScroll = true
                     try {
-                        listState.scrollToItem(index = target, scrollOffset = 0)
+                        listState.scrollToItem(
+                            index = (idx + 1).coerceAtLeast(0),
+                            scrollOffset = centerOffset,
+                        )
                     } finally {
                         isProgrammaticScroll = false
                     }

@@ -98,7 +98,7 @@ class PlayerViewModel(
                 while (true) {
                     val p = exoPlayer ?: break
                     _state.update { it.copy(position = p.currentPosition, duration = p.duration) }
-                    delay(250)
+                    delay(100)
                 }
             } catch (_: CancellationException) {
                 // coroutine cancelled, stop polling
