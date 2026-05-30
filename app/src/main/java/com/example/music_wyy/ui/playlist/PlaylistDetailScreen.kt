@@ -1,5 +1,10 @@
 package com.example.music_wyy.ui.playlist
 
+import android.content.Intent
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -7,6 +12,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.defaultMinSize
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -16,7 +22,6 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.shape.RoundedCornerShape
-import android.content.Intent
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Lyrics
@@ -27,30 +32,26 @@ import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
-import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.draw.drawWithContent
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import coil3.compose.AsyncImage
-import com.example.music_wyy.ui.theme.BackgroundDark
-import com.example.music_wyy.ui.theme.CardDark
-import com.example.music_wyy.ui.theme.NeteaseRed
-import com.example.music_wyy.ui.theme.TextPrimary
-import com.example.music_wyy.ui.theme.TextSecondary
-import com.example.music_wyy.ui.theme.TextTertiary
 import org.koin.compose.viewmodel.koinViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -78,14 +79,17 @@ fun PlaylistDetailScreen(
                 Text(
                     state.name.ifBlank { "歌单详情" },
                     fontWeight = FontWeight.Bold,
-                    color = TextPrimary,
+                    color = MaterialTheme.colorScheme.onSurface,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
                 )
             },
             navigationIcon = {
                 IconButton(onClick = onBack) {
-                    Icon(Icons.AutoMirrored.Filled.ArrowBack, null, tint = TextPrimary)
+                    Icon(
+                        Icons.AutoMirrored.Filled.ArrowBack, null,
+                        tint = MaterialTheme.colorScheme.onSurface,
+                    )
                 }
             },
             actions = {
@@ -98,77 +102,114 @@ fun PlaylistDetailScreen(
                         }
                         context.startActivity(Intent.createChooser(intent, "导出歌单"))
                     }) {
-                        Icon(Icons.Filled.Share, null, tint = TextPrimary)
+                        Icon(
+                            Icons.Filled.Share, null,
+                            tint = MaterialTheme.colorScheme.onSurface,
+                        )
                     }
                 }
             },
-            colors = TopAppBarDefaults.topAppBarColors(containerColor = BackgroundDark),
+            colors = TopAppBarDefaults.topAppBarColors(
+                containerColor = MaterialTheme.colorScheme.background,
+            ),
         )
 
-        if (state.isLoading) {
-            Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                CircularProgressIndicator(color = NeteaseRed)
-            }
-        } else if (state.error != null) {
-            Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                Text(state.error!!, color = TextSecondary, fontSize = 14.sp)
-            }
-        } else {
-            LazyColumn(
-                modifier = Modifier.fillMaxSize(),
-                contentPadding = PaddingValues(16.dp),
-                verticalArrangement = Arrangement.spacedBy(4.dp),
-            ) {
-                // 歌单信息头部
-                item {
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(bottom = 16.dp),
-                        verticalAlignment = Alignment.CenterVertically,
-                    ) {
+        Box(modifier = Modifier.fillMaxSize()) {
+            if (state.isLoading) {
+                Box(
+                    modifier = Modifier.fillMaxSize(),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    CircularProgressIndicator(color = MaterialTheme.colorScheme.primary)
+                }
+            } else {
+                when {
+                    state.error != null -> {
                         Box(
-                            modifier = Modifier
-                                .size(80.dp)
-                                .clip(RoundedCornerShape(12.dp)),
+                            modifier = Modifier.fillMaxSize(),
                             contentAlignment = Alignment.Center,
                         ) {
-                            if (state.coverUrl != null) {
-                                AsyncImage(
-                                    model = state.coverUrl,
-                                    contentDescription = null,
-                                    modifier = Modifier.fillMaxSize(),
-                                    contentScale = ContentScale.Crop,
-                                )
-                            } else {
-                                Icon(
-                                    Icons.Filled.MusicNote, null,
-                                    tint = NeteaseRed.copy(alpha = 0.4f),
-                                    modifier = Modifier.size(36.dp),
-                                )
-                            }
-                        }
-                        Spacer(Modifier.width(16.dp))
-                        Column {
-                            Text(state.name, color = TextPrimary, fontSize = 18.sp, fontWeight = FontWeight.Bold)
-                            Spacer(Modifier.height(4.dp))
-                            Text("${state.songs.size} 首歌曲", color = TextSecondary, fontSize = 13.sp)
+                            Text(
+                                state.error!!,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                style = MaterialTheme.typography.bodyMedium,
+                            )
                         }
                     }
-                }
+                    else -> {
+                        LazyColumn(
+                            modifier = Modifier.fillMaxSize(),
+                            contentPadding = PaddingValues(
+                                start = 16.dp,
+                                end = 16.dp,
+                                top = 16.dp,
+                                bottom = 72.dp,
+                            ),
+                            verticalArrangement = Arrangement.spacedBy(4.dp),
+                        ) {
+                            // Playlist header
+                            item {
+                                Row(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .padding(bottom = 16.dp),
+                                    verticalAlignment = Alignment.CenterVertically,
+                                ) {
+                                    Box(
+                                        modifier = Modifier
+                                            .size(80.dp)
+                                            .clip(RoundedCornerShape(12.dp)),
+                                        contentAlignment = Alignment.Center,
+                                    ) {
+                                        if (state.coverUrl != null) {
+                                            AsyncImage(
+                                                model = state.coverUrl,
+                                                contentDescription = null,
+                                                modifier = Modifier.fillMaxSize(),
+                                                contentScale = ContentScale.Crop,
+                                            )
+                                        } else {
+                                            Icon(
+                                                Icons.Filled.MusicNote, null,
+                                                tint = MaterialTheme.colorScheme.primary.copy(alpha = 0.4f),
+                                                modifier = Modifier.size(36.dp),
+                                            )
+                                        }
+                                    }
+                                    Spacer(Modifier.width(16.dp))
+                                    Column {
+                                        Text(
+                                            state.name,
+                                            color = MaterialTheme.colorScheme.onSurface,
+                                            style = MaterialTheme.typography.titleLarge,
+                                        )
+                                        Spacer(Modifier.height(4.dp))
+                                        Text(
+                                            "${state.songs.size} 首歌曲",
+                                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                            style = MaterialTheme.typography.bodySmall,
+                                        )
+                                    }
+                                }
+                            }
 
-                // 歌曲列表
-                itemsIndexed(state.songs, key = { _, song -> song.id }) { index, song ->
-                    SongRow(
-                        index = index + 1,
-                        song = song,
-                        onPlay = {
-                            onPlaySong(song.id, song.name, song.artists, song.album, state.coverUrl)
-                        },
-                        onLyric = {
-                            onPlaySong(song.id, song.name, song.artists, song.album, state.coverUrl)
-                        },
-                    )
+                            // Song list
+                            itemsIndexed(state.songs, key = { _, song -> song.id }) { index, song ->
+                                Box(Modifier) {
+                                    SongRow(
+                                        index = index + 1,
+                                        song = song,
+                                        onPlay = {
+                                            onPlaySong(song.id, song.name, song.artists, song.album, state.coverUrl)
+                                        },
+                                        onLyric = {
+                                            onPlaySong(song.id, song.name, song.artists, song.album, state.coverUrl)
+                                        },
+                                    )
+                                }
+                            }
+                        }
+                    }
                 }
             }
         }
@@ -184,50 +225,75 @@ private fun SongRow(
 ) {
     val minutes = song.duration / 1000 / 60
     val seconds = (song.duration / 1000) % 60
+    val dividerColor = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f)
 
     Row(
         modifier = Modifier
             .fillMaxWidth()
             .clickable(onClick = onPlay)
-            .padding(vertical = 8.dp),
+            .defaultMinSize(minHeight = 48.dp)
+            .padding(vertical = 12.dp)
+            .drawWithContent {
+                drawContent()
+                drawLine(
+                    color = dividerColor,
+                    start = Offset(0f, size.height),
+                    end = Offset(size.width, size.height),
+                    strokeWidth = 0.5.dp.toPx(),
+                )
+            },
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Text(
             "%02d".format(index),
-            color = TextTertiary,
-            fontSize = 13.sp,
+            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f),
+            style = MaterialTheme.typography.bodySmall,
             modifier = Modifier.width(28.dp),
         )
         Spacer(Modifier.width(8.dp))
 
-        // 播放按钮
-        IconButton(onClick = onPlay, modifier = Modifier.size(40.dp)) {
-            Icon(Icons.Filled.PlayArrow, "播放", tint = NeteaseRed, modifier = Modifier.size(24.dp))
+        // Play button
+        IconButton(onClick = onPlay, modifier = Modifier.size(44.dp)) {
+            Icon(
+                Icons.Filled.PlayArrow, "播放",
+                tint = MaterialTheme.colorScheme.primary,
+                modifier = Modifier.size(24.dp),
+            )
         }
 
         Spacer(Modifier.width(8.dp))
         Column(modifier = Modifier.weight(1f)) {
-            Text(song.name, color = TextPrimary, fontSize = 14.sp, maxLines = 1, overflow = TextOverflow.Ellipsis)
+            Text(
+                song.name,
+                color = MaterialTheme.colorScheme.onSurface,
+                style = MaterialTheme.typography.bodyMedium,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+            )
             Spacer(Modifier.height(2.dp))
             Text(
                 "${song.artists} · ${song.album}",
-                color = TextTertiary,
-                fontSize = 12.sp,
+                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f),
+                style = MaterialTheme.typography.labelMedium,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
             )
         }
 
-        // 歌词按钮
+        // Lyrics button
         IconButton(onClick = onLyric, modifier = Modifier.size(40.dp)) {
-            Icon(Icons.Filled.Lyrics, "歌词", tint = TextSecondary, modifier = Modifier.size(20.dp))
+            Icon(
+                Icons.Filled.Lyrics, "歌词",
+                tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.size(20.dp),
+            )
         }
 
         Spacer(Modifier.width(4.dp))
         Text(
             if (song.duration > 0) "%d:%02d".format(minutes, seconds) else "",
-            color = TextTertiary,
-            fontSize = 12.sp,
+            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f),
+            style = MaterialTheme.typography.labelMedium,
         )
     }
 }

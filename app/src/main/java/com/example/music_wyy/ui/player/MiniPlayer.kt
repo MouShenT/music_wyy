@@ -1,12 +1,12 @@
 package com.example.music_wyy.ui.player
 
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
 import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -26,6 +26,7 @@ import androidx.compose.material.icons.filled.SkipPrevious
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.LinearProgressIndicator
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -35,9 +36,7 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import coil3.compose.AsyncImage
-import com.example.music_wyy.ui.theme.BackgroundDark
 import com.example.music_wyy.ui.theme.CardDark
 import com.example.music_wyy.ui.theme.NeteaseRed
 import com.example.music_wyy.ui.theme.TextPrimary
@@ -56,92 +55,78 @@ fun MiniPlayer(
     val song = state.currentSong
     AnimatedVisibility(
         visible = song != null,
-        enter = slideInVertically(initialOffsetY = { it }),
-        exit = slideOutVertically(targetOffsetY = { it }),
+        enter = slideInVertically(initialOffsetY = { it }) + fadeIn(),
+        exit = slideOutVertically(targetOffsetY = { it }) + fadeOut(),
         modifier = modifier,
     ) {
         if (song != null) {
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .background(CardDark)
+                    .background(MaterialTheme.colorScheme.surfaceVariant)
                     .clickable(onClick = onClick),
             ) {
-                // 进度条
                 if (state.duration > 0) {
                     LinearProgressIndicator(
                         progress = { (state.position.toFloat() / state.duration.toFloat()).coerceIn(0f, 1f) },
                         modifier = Modifier.fillMaxWidth().height(2.dp),
-                        color = NeteaseRed,
-                        trackColor = CardDark,
+                        color = MaterialTheme.colorScheme.primary,
+                        trackColor = MaterialTheme.colorScheme.surface,
                     )
                 }
 
                 Row(
-                    modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
+                    modifier = Modifier.padding(horizontal = 12.dp, vertical = 10.dp),
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
-                    // 封面
-                    Box(
+                    AsyncImage(
+                        model = song.coverUrl,
+                        contentDescription = null,
                         modifier = Modifier
-                            .size(42.dp)
-                            .clip(RoundedCornerShape(6.dp))
-                            .background(BackgroundDark),
-                        contentAlignment = Alignment.Center,
-                    ) {
-                        if (song.coverUrl != null) {
-                            AsyncImage(
-                                model = song.coverUrl,
-                                contentDescription = null,
-                                modifier = Modifier.fillMaxWidth(),
-                                contentScale = ContentScale.Crop,
-                            )
-                        } else {
-                            Icon(Icons.Filled.MusicNote, null, tint = TextSecondary, modifier = Modifier.size(20.dp))
-                        }
-                    }
+                            .size(44.dp)
+                            .clip(RoundedCornerShape(8.dp)),
+                        contentScale = ContentScale.Crop,
+                    )
 
-                    Spacer(Modifier.width(10.dp))
+                    Spacer(Modifier.width(12.dp))
 
-                    // 歌曲信息
                     Column(Modifier.weight(1f)) {
                         Text(
                             song.name,
-                            color = TextPrimary,
-                            fontSize = 14.sp,
+                            color = MaterialTheme.colorScheme.onSurface,
+                            fontSize = MaterialTheme.typography.titleSmall.fontSize,
                             fontWeight = FontWeight.Medium,
                             maxLines = 1,
                             overflow = TextOverflow.Ellipsis,
                         )
                         Text(
                             song.artist,
-                            color = TextSecondary,
-                            fontSize = 12.sp,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            fontSize = MaterialTheme.typography.bodySmall.fontSize,
                             maxLines = 1,
                             overflow = TextOverflow.Ellipsis,
                         )
                     }
 
-                    // 控制按钮
-                    IconButton(onClick = onPrevious, modifier = Modifier.size(36.dp)) {
-                        Icon(Icons.Filled.SkipPrevious, null, tint = TextPrimary, modifier = Modifier.size(22.dp))
+                    IconButton(onClick = onPrevious, modifier = Modifier.size(40.dp)) {
+                        Icon(Icons.Filled.SkipPrevious, null, tint = MaterialTheme.colorScheme.onSurface, modifier = Modifier.size(22.dp))
                     }
-                    IconButton(onClick = onTogglePlay, modifier = Modifier.size(40.dp)) {
+                    IconButton(onClick = onTogglePlay, modifier = Modifier.size(44.dp)) {
                         Icon(
                             if (state.isPlaying) Icons.Filled.Pause else Icons.Filled.PlayArrow,
                             null,
-                            tint = NeteaseRed,
+                            tint = MaterialTheme.colorScheme.primary,
                             modifier = Modifier.size(28.dp),
                         )
                     }
-                    IconButton(onClick = onNext, modifier = Modifier.size(36.dp)) {
-                        Icon(Icons.Filled.SkipNext, null, tint = TextPrimary, modifier = Modifier.size(22.dp))
+                    IconButton(onClick = onNext, modifier = Modifier.size(40.dp)) {
+                        Icon(Icons.Filled.SkipNext, null, tint = MaterialTheme.colorScheme.onSurface, modifier = Modifier.size(22.dp))
                     }
 
                     Spacer(Modifier.width(4.dp))
 
-                    IconButton(onClick = onClose, modifier = Modifier.size(28.dp)) {
-                        Icon(Icons.Filled.Close, null, tint = TextSecondary, modifier = Modifier.size(16.dp))
+                    IconButton(onClick = onClose, modifier = Modifier.size(32.dp)) {
+                        Icon(Icons.Filled.Close, null, tint = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(18.dp))
                     }
                 }
             }

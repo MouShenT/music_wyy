@@ -1,9 +1,15 @@
 package com.example.music_wyy
 
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.slideInVertically
+import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.NavigationBarItemDefaults
@@ -40,7 +46,7 @@ fun MainApp() {
     val currentRoute = navBackStackEntry?.destination?.route
 
     val showBottomBar = currentRoute in bottomNavItems.map { it.route } + Route.Profile.route
-    val isPlayerRoute = currentRoute == Route.Player.route
+    val isPlayerOrLyricRoute = currentRoute == Route.Player.route || currentRoute?.startsWith("lyric") == true
 
     val playerViewModel: PlayerViewModel = koinViewModel()
     val playerState by playerViewModel.state.collectAsStateWithLifecycle()
@@ -53,12 +59,16 @@ fun MainApp() {
     }
 
     Scaffold(
-        containerColor = BackgroundDark,
+        containerColor = MaterialTheme.colorScheme.background,
         bottomBar = {
-            if (showBottomBar) {
+            AnimatedVisibility(
+                visible = showBottomBar,
+                enter = fadeIn() + slideInVertically(initialOffsetY = { it }),
+                exit = fadeOut() + slideOutVertically(targetOffsetY = { it }),
+            ) {
                 NavigationBar(
-                    containerColor = BackgroundDark,
-                    contentColor = TextPrimary,
+                    containerColor = MaterialTheme.colorScheme.surface,
+                    contentColor = MaterialTheme.colorScheme.onSurface,
                 ) {
                     bottomNavItems.forEach { item ->
                         val selected = currentRoute == item.route
@@ -87,11 +97,11 @@ fun MainApp() {
                                 )
                             },
                             colors = NavigationBarItemDefaults.colors(
-                                selectedIconColor = NeteaseRed,
-                                selectedTextColor = NeteaseRed,
-                                unselectedIconColor = TextSecondary,
-                                unselectedTextColor = TextSecondary,
-                                indicatorColor = BackgroundDark,
+                                selectedIconColor = MaterialTheme.colorScheme.primary,
+                                selectedTextColor = MaterialTheme.colorScheme.primary,
+                                unselectedIconColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                                unselectedTextColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                                indicatorColor = MaterialTheme.colorScheme.surface,
                             ),
                         )
                     }
@@ -106,11 +116,12 @@ fun MainApp() {
         ) {
             NavGraph(
                 navController = navController,
+                playerViewModel = playerViewModel,
                 onNavigateToPlayer = { navController.navigate(Route.Player.route) },
             )
 
             // Mini Player — inside content area, above the bottom bar
-            if (!isPlayerRoute && playerState.currentSong != null) {
+            if (!isPlayerOrLyricRoute && playerState.currentSong != null) {
                 MiniPlayer(
                     state = playerState,
                     onTogglePlay = { playerViewModel.togglePlay() },

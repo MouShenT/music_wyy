@@ -1,5 +1,8 @@
 package com.example.music_wyy.ui.message
 
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -8,6 +11,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.defaultMinSize
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -26,13 +30,14 @@ import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
-import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -40,18 +45,37 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import coil3.compose.AsyncImage
-import com.example.music_wyy.ui.theme.BackgroundDark
-import com.example.music_wyy.ui.theme.CardDark
-import com.example.music_wyy.ui.theme.NeteaseRed
-import com.example.music_wyy.ui.theme.TextPrimary
-import com.example.music_wyy.ui.theme.TextSecondary
-import com.example.music_wyy.ui.theme.TextTertiary
 import org.koin.compose.viewmodel.koinViewModel
 import java.text.SimpleDateFormat
+import java.util.Calendar
 import java.util.Date
 import java.util.Locale
+
+private val conversationTimeFormat = SimpleDateFormat("MM-dd HH:mm", Locale.getDefault())
+private val dateSeparatorFormat = SimpleDateFormat("MM月dd日", Locale.getDefault())
+
+private fun formatTime(timestamp: Long): String {
+    if (timestamp == 0L) return ""
+    return conversationTimeFormat.format(Date(timestamp))
+}
+
+private fun isSameDay(t1: Long, t2: Long): Boolean {
+    val cal1 = Calendar.getInstance().apply { timeInMillis = t1 }
+    val cal2 = Calendar.getInstance().apply { timeInMillis = t2 }
+    return cal1.get(Calendar.YEAR) == cal2.get(Calendar.YEAR) &&
+            cal1.get(Calendar.DAY_OF_YEAR) == cal2.get(Calendar.DAY_OF_YEAR)
+}
+
+private fun getDateLabel(timestamp: Long): String {
+    val now = System.currentTimeMillis()
+    return when {
+        isSameDay(timestamp, now) -> "今天"
+        isSameDay(timestamp, now - 86_400_000L) -> "昨天"
+        else -> dateSeparatorFormat.format(Date(timestamp))
+    }
+}
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -66,89 +90,147 @@ fun MsgListScreen(
 
     Column(modifier = Modifier.fillMaxSize()) {
         TopAppBar(
-            title = { Text("私信", fontWeight = FontWeight.Bold, color = TextPrimary) },
+            title = {
+                Text(
+                    "私信",
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.onSurface,
+                )
+            },
             navigationIcon = {
                 IconButton(onClick = onBack) {
-                    Icon(Icons.AutoMirrored.Filled.ArrowBack, null, tint = TextPrimary)
+                    Icon(
+                        Icons.AutoMirrored.Filled.ArrowBack,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.onSurface,
+                    )
                 }
             },
-            colors = TopAppBarDefaults.topAppBarColors(containerColor = BackgroundDark),
+            colors = TopAppBarDefaults.topAppBarColors(
+                containerColor = MaterialTheme.colorScheme.surface,
+            ),
         )
 
-        if (state.isLoading) {
-            Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                CircularProgressIndicator(color = NeteaseRed)
-            }
-        } else if (state.error != null) {
-            Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                    Icon(Icons.Filled.MailOutline, null, tint = TextTertiary, modifier = Modifier.size(48.dp))
-                    Spacer(Modifier.height(12.dp))
-                    Text(state.error!!, color = TextSecondary, fontSize = 14.sp)
+        Box(modifier = Modifier.fillMaxSize()) {
+            if (state.isLoading) {
+                Box(
+                    modifier = Modifier.fillMaxSize(),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    CircularProgressIndicator(color = MaterialTheme.colorScheme.primary)
                 }
-            }
-        } else if (state.conversations.isEmpty()) {
-            Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                    Icon(Icons.Filled.MailOutline, null, tint = TextTertiary, modifier = Modifier.size(48.dp))
-                    Spacer(Modifier.height(12.dp))
-                    Text("暂无私信", color = TextSecondary, fontSize = 14.sp)
+            } else if (state.error != null) {
+                Box(
+                    modifier = Modifier.fillMaxSize(),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                        Icon(
+                            Icons.Filled.MailOutline,
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f),
+                            modifier = Modifier.size(48.dp),
+                        )
+                        Spacer(Modifier.height(12.dp))
+                        Text(
+                            state.error ?: "",
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            style = MaterialTheme.typography.bodyMedium,
+                        )
+                    }
                 }
-            }
-        } else {
-            LazyColumn(
-                modifier = Modifier.fillMaxSize(),
-                contentPadding = PaddingValues(vertical = 8.dp),
-            ) {
-                itemsIndexed(state.conversations, key = { _, c -> c.uid }) { _, conv ->
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .clickable { onConversationClick(conv.uid, conv.nickname) }
-                            .padding(horizontal = 16.dp, vertical = 10.dp),
-                        verticalAlignment = Alignment.CenterVertically,
-                    ) {
-                        Box(modifier = Modifier.size(44.dp)) {
-                            AsyncImage(
-                                model = conv.avatarUrl,
-                                contentDescription = null,
-                                modifier = Modifier.fillMaxSize().clip(CircleShape),
-                                contentScale = ContentScale.Crop,
-                            )
-                            if (conv.unread > 0) {
-                                Box(
+            } else if (state.conversations.isEmpty()) {
+                Box(
+                    modifier = Modifier.fillMaxSize(),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                        Icon(
+                            Icons.Filled.MailOutline,
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f),
+                            modifier = Modifier.size(48.dp),
+                        )
+                        Spacer(Modifier.height(12.dp))
+                        Text(
+                            "暂无私信",
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            style = MaterialTheme.typography.bodyMedium,
+                        )
+                    }
+                }
+            } else {
+                LazyColumn(
+                    modifier = Modifier.fillMaxSize(),
+                    contentPadding = PaddingValues(vertical = 8.dp),
+                ) {
+                    itemsIndexed(
+                        state.conversations,
+                        key = { _, c -> c.uid },
+                    ) { _, conv ->
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .defaultMinSize(minHeight = 56.dp)
+                                .clickable { onConversationClick(conv.uid, conv.nickname) }
+                                .padding(horizontal = 16.dp, vertical = 8.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                        ) {
+                            Box(modifier = Modifier.size(48.dp)) {
+                                AsyncImage(
+                                    model = conv.avatarUrl,
+                                    contentDescription = null,
                                     modifier = Modifier
-                                        .size(16.dp)
-                                        .align(Alignment.TopEnd)
-                                        .background(NeteaseRed, CircleShape),
-                                    contentAlignment = Alignment.Center,
-                                ) {
-                                    Text(
-                                        "${conv.unread}", color = TextPrimary,
-                                        fontSize = 9.sp, fontWeight = FontWeight.Bold,
-                                    )
+                                        .fillMaxSize()
+                                        .clip(CircleShape),
+                                    contentScale = ContentScale.Crop,
+                                )
+                                if (conv.unread > 0) {
+                                    Box(
+                                        modifier = Modifier
+                                            .size(18.dp)
+                                            .align(Alignment.TopEnd)
+                                            .background(
+                                                MaterialTheme.colorScheme.primary,
+                                                CircleShape,
+                                            ),
+                                        contentAlignment = Alignment.Center,
+                                    ) {
+                                        Text(
+                                            "${conv.unread}",
+                                            color = MaterialTheme.colorScheme.onPrimary,
+                                            style = MaterialTheme.typography.labelSmall,
+                                            fontWeight = FontWeight.Bold,
+                                        )
+                                    }
                                 }
                             }
-                        }
-                        Spacer(Modifier.width(12.dp))
-                        Column(Modifier.weight(1f)) {
-                            Row(verticalAlignment = Alignment.CenterVertically) {
-                                Text(conv.nickname, color = TextPrimary, fontSize = 15.sp, fontWeight = FontWeight.Medium)
-                                Spacer(Modifier.weight(1f))
+                            Spacer(Modifier.width(12.dp))
+                            Column(Modifier.weight(1f)) {
+                                Row(verticalAlignment = Alignment.CenterVertically) {
+                                    Text(
+                                        conv.nickname,
+                                        color = MaterialTheme.colorScheme.onSurface,
+                                        style = MaterialTheme.typography.titleSmall,
+                                        fontWeight = FontWeight.Medium,
+                                    )
+                                    Spacer(Modifier.weight(1f))
+                                    Text(
+                                        formatTime(conv.lastTime),
+                                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f),
+                                        style = MaterialTheme.typography.labelSmall,
+                                    )
+                                }
+                                Spacer(Modifier.height(4.dp))
                                 Text(
-                                    formatTime(conv.lastTime),
-                                    color = TextTertiary,
-                                    fontSize = 11.sp,
+                                    conv.lastMsg,
+                                    color = if (conv.unread > 0) MaterialTheme.colorScheme.onSurface
+                                    else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f),
+                                    style = MaterialTheme.typography.bodySmall,
+                                    maxLines = 1,
+                                    overflow = TextOverflow.Ellipsis,
                                 )
                             }
-                            Spacer(Modifier.height(2.dp))
-                            Text(
-                                conv.lastMsg,
-                                color = if (conv.unread > 0) TextPrimary else TextTertiary,
-                                fontSize = 13.sp,
-                                maxLines = 1,
-                                overflow = TextOverflow.Ellipsis,
-                            )
                         }
                     }
                 }
@@ -172,54 +254,121 @@ fun MsgDetailScreen(
 
     Column(modifier = Modifier.fillMaxSize()) {
         TopAppBar(
-            title = { Text(nickname, fontWeight = FontWeight.Bold, color = TextPrimary) },
+            title = {
+                Text(
+                    nickname,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.onSurface,
+                )
+            },
             navigationIcon = {
                 IconButton(onClick = onBack) {
-                    Icon(Icons.AutoMirrored.Filled.ArrowBack, null, tint = TextPrimary)
+                    Icon(
+                        Icons.AutoMirrored.Filled.ArrowBack,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.onSurface,
+                    )
                 }
             },
-            colors = TopAppBarDefaults.topAppBarColors(containerColor = BackgroundDark),
+            colors = TopAppBarDefaults.topAppBarColors(
+                containerColor = MaterialTheme.colorScheme.surface,
+            ),
         )
 
-        if (state.isLoadingDetail) {
-            Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                CircularProgressIndicator(color = NeteaseRed)
-            }
-        } else {
-            LazyColumn(
-                state = listState,
-                modifier = Modifier.fillMaxSize(),
-                contentPadding = PaddingValues(horizontal = 16.dp, vertical = 12.dp),
-                verticalArrangement = Arrangement.spacedBy(8.dp),
-            ) {
-                itemsIndexed(state.messages, key = { _, m -> "${m.id}" }) { _, msg ->
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = if (msg.isMine) Arrangement.End else Arrangement.Start,
-                    ) {
-                        Box(
-                            modifier = Modifier
-                                .weight(0.75f, fill = false)
-                                .background(
-                                    if (msg.isMine) NeteaseRed.copy(alpha = 0.3f) else CardDark,
-                                    RoundedCornerShape(
+        Box(modifier = Modifier.fillMaxSize()) {
+            if (state.isLoadingDetail) {
+                Box(
+                    modifier = Modifier.fillMaxSize(),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    CircularProgressIndicator(color = MaterialTheme.colorScheme.primary)
+                }
+            } else if (state.messages.isEmpty()) {
+                Box(
+                    modifier = Modifier.fillMaxSize(),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                        Icon(
+                            Icons.Filled.MailOutline,
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f),
+                            modifier = Modifier.size(48.dp),
+                        )
+                        Spacer(Modifier.height(12.dp))
+                        Text(
+                            "暂无消息，发送第一条消息吧",
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            style = MaterialTheme.typography.bodyMedium,
+                        )
+                    }
+                }
+            } else {
+                LazyColumn(
+                    state = listState,
+                    modifier = Modifier.fillMaxSize(),
+                    contentPadding = PaddingValues(horizontal = 16.dp, vertical = 12.dp),
+                    verticalArrangement = Arrangement.spacedBy(8.dp),
+                ) {
+                    itemsIndexed(
+                        state.messages,
+                        key = { _, m -> "${m.id}" },
+                    ) { index, msg ->
+                        Column {
+                            // Date separator header
+                            val showSeparator = index == 0 ||
+                                    !isSameDay(msg.time, state.messages[index - 1].time)
+                            if (showSeparator) {
+                                Box(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .padding(vertical = 12.dp),
+                                    contentAlignment = Alignment.Center,
+                                ) {
+                                    Text(
+                                        text = getDateLabel(msg.time),
+                                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f),
+                                        style = MaterialTheme.typography.labelSmall,
+                                    )
+                                }
+                            }
+
+                            // Message bubble row
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = if (msg.isMine) Arrangement.End
+                                else Arrangement.Start,
+                            ) {
+                                Surface(
+                                    modifier = Modifier.weight(0.75f, fill = false),
+                                    shape = RoundedCornerShape(
                                         topStart = 16.dp,
                                         topEnd = 16.dp,
                                         bottomStart = if (msg.isMine) 16.dp else 4.dp,
                                         bottomEnd = if (msg.isMine) 4.dp else 16.dp,
                                     ),
-                                )
-                                .padding(12.dp),
-                        ) {
-                            Column {
-                                Text(msg.msg, color = TextPrimary, fontSize = 14.sp)
-                                Spacer(Modifier.height(4.dp))
-                                Text(
-                                    formatTime(msg.time),
-                                    color = TextTertiary,
-                                    fontSize = 10.sp,
-                                    modifier = Modifier.align(Alignment.End),
-                                )
+                                    color = if (msg.isMine) {
+                                        MaterialTheme.colorScheme.primary.copy(alpha = 0.25f)
+                                    } else {
+                                        MaterialTheme.colorScheme.surfaceVariant
+                                    },
+                                    shadowElevation = 2.dp,
+                                ) {
+                                    Column(modifier = Modifier.padding(12.dp)) {
+                                        Text(
+                                            msg.msg,
+                                            color = MaterialTheme.colorScheme.onSurface,
+                                            style = MaterialTheme.typography.bodyMedium,
+                                        )
+                                        Spacer(Modifier.height(4.dp))
+                                        Text(
+                                            formatTime(msg.time),
+                                            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f),
+                                            style = MaterialTheme.typography.labelSmall,
+                                            modifier = Modifier.align(Alignment.End),
+                                        )
+                                    }
+                                }
                             }
                         }
                     }
@@ -227,10 +376,4 @@ fun MsgDetailScreen(
             }
         }
     }
-}
-
-private fun formatTime(timestamp: Long): String {
-    if (timestamp == 0L) return ""
-    val sdf = SimpleDateFormat("MM-dd HH:mm", Locale.getDefault())
-    return sdf.format(Date(timestamp))
 }

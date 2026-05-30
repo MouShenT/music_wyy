@@ -22,18 +22,16 @@ import com.example.music_wyy.ui.automation.AutomationScreen
 import com.example.music_wyy.ui.profile.ProfileScreen
 import com.example.music_wyy.ui.settings.SettingsScreen
 import com.example.music_wyy.ui.yunbei.YunbeiScreen
-import org.koin.compose.viewmodel.koinViewModel
 import java.net.URLDecoder
 import java.net.URLEncoder
 
 @Composable
 fun NavGraph(
     navController: NavHostController,
+    playerViewModel: PlayerViewModel,
     modifier: Modifier = Modifier,
     onNavigateToPlayer: () -> Unit = {},
 ) {
-    val playerViewModel: PlayerViewModel = koinViewModel()
-
     NavHost(
         navController = navController,
         startDestination = Route.Login.route,
@@ -152,6 +150,7 @@ fun NavGraph(
                 album = album,
                 coverUrl = coverUrl,
                 onBack = { navController.popBackStack() },
+                playerViewModel = playerViewModel,
             )
         }
         composable(Route.Messages.route) {

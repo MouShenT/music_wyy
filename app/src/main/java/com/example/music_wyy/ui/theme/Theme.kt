@@ -11,24 +11,31 @@ import androidx.core.view.WindowCompat
 
 private val NeteaseDarkColors = darkColorScheme(
     primary = NeteaseRed,
-    onPrimary = TextPrimary,
+    onPrimary = TextOnPrimary,
     primaryContainer = NeteaseRedDark,
-    onPrimaryContainer = TextPrimary,
+    onPrimaryContainer = TextOnPrimary,
     secondary = NeteaseRedLight,
-    onSecondary = TextPrimary,
-    secondaryContainer = CardDark,
+    onSecondary = TextOnPrimary,
+    secondaryContainer = SurfaceDark4,
     onSecondaryContainer = TextSecondary,
     tertiary = NeteaseRedLight,
-    onTertiary = TextPrimary,
-    background = BackgroundDark,
+    onTertiary = TextOnPrimary,
+    background = SurfaceDark0,
     onBackground = TextPrimary,
-    surface = SurfaceDark,
+    surface = SurfaceDark2,
     onSurface = TextPrimary,
-    surfaceVariant = CardDark,
+    surfaceVariant = SurfaceDark4,
     onSurfaceVariant = TextSecondary,
-    error = NeteaseRed,
-    onError = TextPrimary,
+    surfaceContainerLow = SurfaceDark1,
+    surfaceContainerHigh = SurfaceDark4,
+    surfaceContainerHighest = SurfaceDark5,
+    error = ErrorRed,
+    onError = TextOnPrimary,
+    errorContainer = ErrorRed.copy(alpha = 0.15f),
+    onErrorContainer = ErrorRed,
     outline = DividerDark,
+    outlineVariant = DividerDark,
+    scrim = ScrimDark,
 )
 
 @Composable
@@ -37,8 +44,8 @@ fun MusicWyyTheme(content: @Composable () -> Unit) {
     if (!view.isInEditMode) {
         SideEffect {
             val window = (view.context as Activity).window
-            window.statusBarColor = BackgroundDark.toArgb()
-            window.navigationBarColor = BackgroundDark.toArgb()
+            window.statusBarColor = SurfaceDark0.toArgb()
+            window.navigationBarColor = SurfaceDark0.toArgb()
             WindowCompat.getInsetsController(window, view).apply {
                 isAppearanceLightStatusBars = false
                 isAppearanceLightNavigationBars = false
