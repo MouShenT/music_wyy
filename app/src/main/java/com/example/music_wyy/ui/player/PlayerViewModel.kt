@@ -97,9 +97,7 @@ class PlayerViewModel(
             try {
                 while (true) {
                     val p = exoPlayer ?: break
-                    if (p.isPlaying || p.playbackState == Player.STATE_BUFFERING) {
-                        _state.update { it.copy(position = p.currentPosition, duration = p.duration) }
-                    }
+                    _state.update { it.copy(position = p.currentPosition, duration = p.duration) }
                     delay(250)
                 }
             } catch (_: CancellationException) {
