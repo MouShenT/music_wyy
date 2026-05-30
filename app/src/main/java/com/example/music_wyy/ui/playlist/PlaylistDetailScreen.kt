@@ -6,6 +6,7 @@ import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -44,6 +45,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.drawWithContent
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
@@ -152,13 +154,13 @@ fun PlaylistDetailScreen(
                                 Row(
                                     modifier = Modifier
                                         .fillMaxWidth()
-                                        .padding(bottom = 16.dp),
-                                    verticalAlignment = Alignment.CenterVertically,
+                                        .padding(bottom = 20.dp),
+                                    verticalAlignment = Alignment.Top,
                                 ) {
                                     Box(
                                         modifier = Modifier
-                                            .size(80.dp)
-                                            .clip(RoundedCornerShape(12.dp)),
+                                            .size(120.dp)
+                                            .clip(RoundedCornerShape(14.dp)),
                                         contentAlignment = Alignment.Center,
                                     ) {
                                         if (state.coverUrl != null) {
@@ -169,26 +171,48 @@ fun PlaylistDetailScreen(
                                                 contentScale = ContentScale.Crop,
                                             )
                                         } else {
-                                            Icon(
-                                                Icons.Filled.MusicNote, null,
-                                                tint = MaterialTheme.colorScheme.primary.copy(alpha = 0.4f),
-                                                modifier = Modifier.size(36.dp),
-                                            )
+                                            Box(
+                                                modifier = Modifier.fillMaxSize()
+                                                    .background(
+                                                        Brush.linearGradient(
+                                                            listOf(
+                                                                MaterialTheme.colorScheme.primary.copy(alpha = 0.3f),
+                                                                MaterialTheme.colorScheme.primary.copy(alpha = 0.08f),
+                                                            )
+                                                        )
+                                                    ),
+                                                contentAlignment = Alignment.Center,
+                                            ) {
+                                                Icon(
+                                                    Icons.Filled.MusicNote, null,
+                                                    tint = MaterialTheme.colorScheme.primary.copy(alpha = 0.5f),
+                                                    modifier = Modifier.size(48.dp),
+                                                )
+                                            }
                                         }
                                     }
                                     Spacer(Modifier.width(16.dp))
-                                    Column {
+                                    Column(modifier = Modifier.weight(1f).padding(top = 4.dp)) {
                                         Text(
                                             state.name,
                                             color = MaterialTheme.colorScheme.onSurface,
-                                            style = MaterialTheme.typography.titleLarge,
+                                            style = MaterialTheme.typography.headlineSmall,
+                                            fontWeight = FontWeight.Bold,
                                         )
-                                        Spacer(Modifier.height(4.dp))
+                                        Spacer(Modifier.height(8.dp))
                                         Text(
                                             "${state.songs.size} 首歌曲",
                                             color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                            style = MaterialTheme.typography.bodySmall,
+                                            style = MaterialTheme.typography.bodyMedium,
                                         )
+                                        Spacer(Modifier.height(4.dp))
+                                        if (state.songs.isNotEmpty()) {
+                                            Text(
+                                                "总时长: ${formatTotalDuration(state.songs.sumOf { it.duration.toLong() })}",
+                                                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.4f),
+                                                style = MaterialTheme.typography.labelSmall,
+                                            )
+                                        }
                                     }
                                 }
                             }
@@ -225,7 +249,7 @@ private fun SongRow(
 ) {
     val minutes = song.duration / 1000 / 60
     val seconds = (song.duration / 1000) % 60
-    val dividerColor = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f)
+    val dividerColor = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.15f)
 
     Row(
         modifier = Modifier
@@ -296,4 +320,11 @@ private fun SongRow(
             style = MaterialTheme.typography.labelMedium,
         )
     }
+}
+
+private fun formatTotalDuration(totalMs: Long): String {
+    val totalSec = totalMs / 1000
+    val hours = totalSec / 3600
+    val minutes = (totalSec % 3600) / 60
+    return if (hours > 0) "${hours}h ${minutes}min" else "${minutes} 分钟"
 }

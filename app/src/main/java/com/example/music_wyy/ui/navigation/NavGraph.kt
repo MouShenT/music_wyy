@@ -48,6 +48,10 @@ fun NavGraph(
         }
         composable(Route.Home.route) {
             HomeScreen(
+                playerViewModel = playerViewModel,
+                onNavigateToPlaylist = { playlistId ->
+                    navController.navigate(Route.PlaylistDetail.create(playlistId))
+                },
                 onNavigateToYunbei = { navController.navigate(Route.Yunbei.route) },
                 onNavigateToMessages = { navController.navigate(Route.Messages.route) },
             )

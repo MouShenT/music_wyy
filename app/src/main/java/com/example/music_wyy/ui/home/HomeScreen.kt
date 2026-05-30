@@ -1,10 +1,10 @@
 package com.example.music_wyy.ui.home
 
 import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.Crossfade
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.core.tween
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -12,24 +12,27 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.foundation.lazy.grid.GridCells
+import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
+import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.Cloud
-import androidx.compose.material.icons.filled.MailOutline
 import androidx.compose.material.icons.filled.MusicNote
-import androidx.compose.material.icons.filled.Refresh
+import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.Search
+import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -44,32 +47,35 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
-import androidx.compose.material3.TopAppBar
-import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import coil3.compose.AsyncImage
+import com.example.music_wyy.ui.player.PlayerViewModel
+import com.example.music_wyy.ui.player.PlayingSong
 import org.koin.compose.viewmodel.koinViewModel
-
-private val animSpec = tween<Float>(300)
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun HomeScreen(
     viewModel: HomeViewModel = koinViewModel(),
+    playerViewModel: PlayerViewModel,
+    onNavigateToPlaylist: (String) -> Unit = {},
     onNavigateToYunbei: () -> Unit = {},
     onNavigateToMessages: () -> Unit = {},
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
+    val playerState by playerViewModel.state.collectAsStateWithLifecycle()
+    val recentlyPlayed = playerState.playlist.takeLast(10).reversed()
 
-    // Playlist picker dialog
     if (state.showPlaylistPicker) {
         AlertDialog(
             onDismissRequest = { viewModel.hidePlaylistPicker() },
@@ -87,31 +93,21 @@ fun HomeScreen(
                                     .padding(vertical = 10.dp),
                                 verticalAlignment = Alignment.CenterVertically,
                             ) {
-                                Icon(
-                                    Icons.Filled.MusicNote, null,
+                                Icon(Icons.Filled.MusicNote, null,
                                     tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                                    modifier = Modifier.size(20.dp),
-                                )
+                                    modifier = Modifier.size(20.dp))
                                 Spacer(Modifier.width(10.dp))
                                 Column(Modifier.weight(1f)) {
-                                    Text(
-                                        pl.name,
-                                        color = MaterialTheme.colorScheme.onSurface,
+                                    Text(pl.name, color = MaterialTheme.colorScheme.onSurface,
                                         style = MaterialTheme.typography.bodyMedium,
-                                        maxLines = 1,
-                                        overflow = TextOverflow.Ellipsis,
-                                    )
-                                    Text(
-                                        "${pl.trackCount} 首",
+                                        maxLines = 1, overflow = TextOverflow.Ellipsis)
+                                    Text("${pl.trackCount} 首",
                                         color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f),
-                                        style = MaterialTheme.typography.bodySmall,
-                                    )
+                                        style = MaterialTheme.typography.bodySmall)
                                 }
-                                Icon(
-                                    Icons.Filled.Add, null,
+                                Icon(Icons.Filled.Add, null,
                                     tint = MaterialTheme.colorScheme.primary,
-                                    modifier = Modifier.size(18.dp),
-                                )
+                                    modifier = Modifier.size(18.dp))
                             }
                         }
                     }
@@ -127,435 +123,375 @@ fun HomeScreen(
         )
     }
 
-    Column(modifier = Modifier.fillMaxSize()) {
-        TopAppBar(
-            title = {
-                Text(
-                    "首页",
-                    fontWeight = FontWeight.Bold,
-                    color = MaterialTheme.colorScheme.onSurface,
-                )
-            },
-            colors = TopAppBarDefaults.topAppBarColors(
-                containerColor = MaterialTheme.colorScheme.background,
-            ),
-            actions = {
-                IconButton(onClick = { viewModel.loadOverview() }) {
-                    Icon(
-                        Icons.Filled.Refresh, null,
-                        tint = MaterialTheme.colorScheme.onSurface,
-                    )
-                }
-            },
-        )
-
-        LazyColumn(
-            modifier = Modifier.fillMaxSize(),
-            contentPadding = PaddingValues(16.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp),
-        ) {
-            // 用户问候
-            item(key = "greeting") {
-                Card(
-                    modifier = Modifier.fillMaxWidth().animateItem(),
-                    shape = RoundedCornerShape(14.dp),
-                    colors = CardDefaults.cardColors(
-                        containerColor = MaterialTheme.colorScheme.surfaceVariant,
-                    ),
+    LazyColumn(
+        modifier = Modifier.fillMaxSize(),
+        contentPadding = PaddingValues(bottom = 24.dp),
+    ) {
+        // ── Search bar (always at top) ──
+        item(key = "search_bar") {
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .background(MaterialTheme.colorScheme.background)
+                    .padding(horizontal = 16.dp, vertical = 12.dp),
+            ) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically,
                 ) {
-                    Row(
-                        modifier = Modifier.fillMaxWidth().padding(16.dp),
-                        verticalAlignment = Alignment.CenterVertically,
-                    ) {
-                        Icon(
-                            Icons.Filled.MusicNote, null,
-                            tint = MaterialTheme.colorScheme.primary,
-                            modifier = Modifier.size(40.dp).clip(CircleShape).padding(6.dp),
-                        )
-                        Spacer(Modifier.width(12.dp))
-                        Column {
-                            Text(
-                                state.nickname?.let { "Hi, $it" } ?: "欢迎使用",
-                                color = MaterialTheme.colorScheme.onSurface,
-                                style = MaterialTheme.typography.headlineSmall,
-                            )
-                            Text(
-                                "网易云音乐助手",
-                                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                style = MaterialTheme.typography.bodySmall,
-                            )
-                        }
-                    }
-                }
-            }
-
-            // 统计卡片
-            item(key = "stats") {
-                AnimatedVisibility(
-                    visible = !state.isLoading,
-                    modifier = Modifier.animateItem(),
-                    enter = fadeIn(animationSpec = animSpec),
-                    exit = fadeOut(animationSpec = animSpec),
-                ) {
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.spacedBy(12.dp),
-                    ) {
-                        StatCard(
-                            "我的歌单", state.totalPlaylists.toString(),
-                            MaterialTheme.colorScheme.primary,
-                            Modifier.weight(1f),
-                        )
-                        StatCard(
-                            "总歌曲数", state.totalSongs.toString(),
-                            MaterialTheme.colorScheme.onSurface,
-                            Modifier.weight(1f),
-                        )
-                    }
-                }
-            }
-
-            // 快捷入口
-            item(key = "quick_entries") {
-                AnimatedVisibility(
-                    visible = !state.isLoading,
-                    modifier = Modifier.animateItem(),
-                    enter = fadeIn(animationSpec = animSpec),
-                    exit = fadeOut(animationSpec = animSpec),
-                ) {
-                    Card(
-                        modifier = Modifier.fillMaxWidth(),
-                        shape = RoundedCornerShape(12.dp),
-                        colors = CardDefaults.cardColors(
-                            containerColor = MaterialTheme.colorScheme.surfaceVariant,
+                    OutlinedTextField(
+                        value = state.searchQuery,
+                        onValueChange = { viewModel.onSearchQueryChange(it) },
+                        placeholder = {
+                            Text("搜索音乐、歌手、专辑...",
+                                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.4f))
+                        },
+                        leadingIcon = {
+                            Icon(Icons.Filled.Search, null,
+                                tint = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f),
+                                modifier = Modifier.size(20.dp))
+                        },
+                        singleLine = true,
+                        shape = RoundedCornerShape(24.dp),
+                        modifier = Modifier.weight(1f).height(52.dp),
+                        colors = OutlinedTextFieldDefaults.colors(
+                            focusedTextColor = MaterialTheme.colorScheme.onSurface,
+                            unfocusedTextColor = MaterialTheme.colorScheme.onSurface,
+                            focusedBorderColor = MaterialTheme.colorScheme.primary,
+                            unfocusedBorderColor = MaterialTheme.colorScheme.surfaceVariant,
+                            cursorColor = MaterialTheme.colorScheme.primary,
+                            focusedContainerColor = MaterialTheme.colorScheme.surfaceVariant,
+                            unfocusedContainerColor = MaterialTheme.colorScheme.surfaceVariant,
                         ),
-                    ) {
-                        Column {
-                            QuickEntry(
-                                icon = Icons.Filled.Cloud, title = "云贝中心",
-                                subtitle = "查看云贝余额和任务", onClick = onNavigateToYunbei,
-                            )
-                            QuickEntry(
-                                icon = Icons.Filled.MailOutline, title = "我的私信",
-                                subtitle = "查看私信消息", onClick = onNavigateToMessages,
-                            )
-                        }
-                    }
-                }
-            }
-
-            // 签到状态
-            item(key = "signin") {
-                Crossfade(
-                    targetState = state.todaySigned,
-                    modifier = Modifier.animateItem(),
-                    animationSpec = animSpec,
-                ) { signed ->
-                    Card(
-                        modifier = Modifier.fillMaxWidth(),
-                        shape = RoundedCornerShape(12.dp),
-                        colors = CardDefaults.cardColors(
-                            containerColor = if (signed) {
-                                MaterialTheme.colorScheme.primaryContainer
-                            } else {
-                                MaterialTheme.colorScheme.surfaceVariant
-                            },
-                        ),
-                    ) {
-                        Row(
-                            modifier = Modifier.fillMaxWidth().padding(16.dp),
-                            verticalAlignment = Alignment.CenterVertically,
-                        ) {
-                            Column(modifier = Modifier.weight(1f)) {
-                                Text(
-                                    "今日签到",
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                    style = MaterialTheme.typography.bodySmall,
-                                )
-                                Text(
-                                    if (signed) "已签到" else "未签到",
-                                    color = if (signed) {
-                                        MaterialTheme.colorScheme.primary
-                                    } else {
-                                        MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f)
-                                    },
-                                    style = MaterialTheme.typography.titleMedium,
-                                )
-                                if (state.todayPoints > 0) {
-                                    Text(
-                                        "+${state.todayPoints} 积分",
-                                        color = MaterialTheme.colorScheme.primary,
-                                        style = MaterialTheme.typography.bodySmall,
-                                    )
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-
-            // ── 音乐搜索 ──
-            item(key = "search_label") {
-                AnimatedVisibility(
-                    visible = !state.isLoading,
-                    modifier = Modifier.animateItem(),
-                    enter = fadeIn(animationSpec = animSpec),
-                    exit = fadeOut(animationSpec = animSpec),
-                ) {
-                    Text(
-                        "搜索歌曲",
-                        color = MaterialTheme.colorScheme.onSurface,
-                        style = MaterialTheme.typography.titleMedium,
                     )
-                }
-            }
-
-            item(key = "search_input") {
-                AnimatedVisibility(
-                    visible = !state.isLoading,
-                    modifier = Modifier.animateItem(),
-                    enter = fadeIn(animationSpec = animSpec),
-                    exit = fadeOut(animationSpec = animSpec),
-                ) {
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        verticalAlignment = Alignment.CenterVertically,
+                    Spacer(Modifier.width(8.dp))
+                    Button(
+                        onClick = { viewModel.search() },
+                        enabled = state.searchQuery.isNotBlank() && !state.isSearching,
+                        modifier = Modifier.height(52.dp),
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = MaterialTheme.colorScheme.primary,
+                        ),
+                        shape = RoundedCornerShape(12.dp),
                     ) {
-                        OutlinedTextField(
-                            value = state.searchQuery,
-                            onValueChange = { viewModel.onSearchQueryChange(it) },
-                            placeholder = {
-                                Text(
-                                    "搜索歌曲或歌手...",
-                                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f),
-                                )
-                            },
-                            singleLine = true,
-                            modifier = Modifier.weight(1f),
-                            colors = OutlinedTextFieldDefaults.colors(
-                                focusedTextColor = MaterialTheme.colorScheme.onSurface,
-                                unfocusedTextColor = MaterialTheme.colorScheme.onSurface,
-                                focusedBorderColor = MaterialTheme.colorScheme.primary,
-                                unfocusedBorderColor = MaterialTheme.colorScheme.surfaceVariant,
-                                cursorColor = MaterialTheme.colorScheme.primary,
-                            ),
-                        )
-                        Spacer(Modifier.width(8.dp))
-                        Button(
-                            onClick = { viewModel.search() },
-                            enabled = state.searchQuery.isNotBlank() && !state.isSearching,
-                            modifier = Modifier.height(48.dp),
-                            colors = ButtonDefaults.buttonColors(
-                                containerColor = MaterialTheme.colorScheme.primary,
-                            ),
-                            shape = RoundedCornerShape(8.dp),
-                        ) {
-                            if (state.isSearching) {
-                                CircularProgressIndicator(
-                                    color = MaterialTheme.colorScheme.onSurface,
-                                    modifier = Modifier.size(16.dp),
-                                    strokeWidth = 2.dp,
-                                )
-                            } else {
-                                Icon(Icons.Filled.Search, null, Modifier.size(18.dp))
-                            }
+                        if (state.isSearching) {
+                            CircularProgressIndicator(
+                                color = MaterialTheme.colorScheme.onPrimary,
+                                modifier = Modifier.size(18.dp), strokeWidth = 2.dp)
+                        } else {
+                            Text("搜索", style = MaterialTheme.typography.labelLarge)
                         }
                     }
                 }
             }
+        }
 
-            // 搜索结果消息
+        // ── Search results or main content ──
+        if (state.searchResults.isNotEmpty() || state.searchMessage != null) {
+            // Search results header
             state.searchMessage?.let { msg ->
-                item(key = "search_message_$msg") {
-                    AnimatedVisibility(
-                        visible = !state.isLoading,
-                        modifier = Modifier.animateItem(),
-                        enter = fadeIn(animationSpec = animSpec),
-                        exit = fadeOut(animationSpec = animSpec),
-                    ) {
+                item(key = "search_msg") {
+                    AnimatedVisibility(visible = true, enter = fadeIn(), exit = fadeOut()) {
                         Text(
                             msg,
-                            color = if (msg.startsWith("搜索失败")) {
-                                MaterialTheme.colorScheme.primary
-                            } else {
-                                MaterialTheme.colorScheme.secondary
-                            },
+                            color = MaterialTheme.colorScheme.secondary,
                             style = MaterialTheme.typography.bodySmall,
+                            modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp),
                         )
                     }
                 }
             }
-
-            // 添加结果消息
-            state.addResultMessage?.let { msg ->
-                item(key = "add_result_$msg") {
-                    AnimatedVisibility(
-                        visible = !state.isLoading,
-                        modifier = Modifier.animateItem(),
-                        enter = fadeIn(animationSpec = animSpec),
-                        exit = fadeOut(animationSpec = animSpec),
+            items(state.searchResults, key = { it.id }) { song ->
+                Card(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 16.dp, vertical = 4.dp),
+                    shape = RoundedCornerShape(10.dp),
+                    colors = CardDefaults.cardColors(
+                        containerColor = MaterialTheme.colorScheme.surfaceVariant),
+                ) {
+                    Row(
+                        modifier = Modifier.padding(12.dp)
+                            .clickable {
+                                playerViewModel.playSong(
+                                    PlayingSong(
+                                        id = song.id.toString(),
+                                        name = song.name,
+                                        artist = song.artist,
+                                        album = song.album,
+                                        coverUrl = song.coverUrl,
+                                    )
+                                )
+                            },
+                        verticalAlignment = Alignment.CenterVertically,
                     ) {
-                        Card(
-                            modifier = Modifier.fillMaxWidth(),
-                            shape = RoundedCornerShape(8.dp),
-                            colors = CardDefaults.cardColors(
-                                containerColor = MaterialTheme.colorScheme.primaryContainer,
-                            ),
+                        Box(
+                            modifier = Modifier.size(44.dp).clip(RoundedCornerShape(8.dp)),
+                            contentAlignment = Alignment.Center,
                         ) {
-                            Text(
-                                msg,
-                                color = MaterialTheme.colorScheme.onSurface,
-                                style = MaterialTheme.typography.bodySmall,
-                                modifier = Modifier.padding(12.dp),
-                            )
-                        }
-                    }
-                }
-            }
-
-            // 搜索结果
-            if (state.searchResults.isNotEmpty()) {
-                items(state.searchResults, key = { it.id }) { song ->
-                    AnimatedVisibility(
-                        visible = !state.isLoading,
-                        modifier = Modifier.animateItem(),
-                        enter = fadeIn(animationSpec = animSpec),
-                        exit = fadeOut(animationSpec = animSpec),
-                    ) {
-                        Card(
-                            modifier = Modifier.fillMaxWidth(),
-                            shape = RoundedCornerShape(8.dp),
-                            colors = CardDefaults.cardColors(
-                                containerColor = MaterialTheme.colorScheme.surfaceVariant,
-                            ),
-                        ) {
-                            Row(
-                                modifier = Modifier.padding(12.dp),
-                                verticalAlignment = Alignment.CenterVertically,
-                            ) {
-                                Column(Modifier.weight(1f)) {
-                                    Text(
-                                        song.name,
-                                        color = MaterialTheme.colorScheme.onSurface,
-                                        style = MaterialTheme.typography.bodyMedium,
-                                        maxLines = 1,
-                                        overflow = TextOverflow.Ellipsis,
-                                    )
-                                    Text(
-                                        "${song.artist} · ${song.album}",
-                                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                        style = MaterialTheme.typography.bodySmall,
-                                        maxLines = 1,
-                                        overflow = TextOverflow.Ellipsis,
-                                    )
-                                }
-                                Spacer(Modifier.width(8.dp))
-                                IconButton(
-                                    onClick = { viewModel.showPlaylistPicker(song.id, song.name) },
-                                    modifier = Modifier.size(36.dp),
-                                ) {
-                                    Icon(
-                                        Icons.Filled.Add, "添加到歌单",
-                                        tint = MaterialTheme.colorScheme.primary,
-                                        modifier = Modifier.size(20.dp),
-                                    )
-                                }
+                            if (song.coverUrl != null) {
+                                AsyncImage(model = song.coverUrl, contentDescription = null,
+                                    modifier = Modifier.fillMaxSize(),
+                                    contentScale = ContentScale.Crop)
+                            } else {
+                                Icon(Icons.Filled.MusicNote, null,
+                                    tint = MaterialTheme.colorScheme.primary.copy(alpha = 0.5f),
+                                    modifier = Modifier.size(22.dp))
                             }
                         }
+                        Spacer(Modifier.width(12.dp))
+                        Column(Modifier.weight(1f)) {
+                            Text(song.name, color = MaterialTheme.colorScheme.onSurface,
+                                style = MaterialTheme.typography.bodyMedium,
+                                maxLines = 1, overflow = TextOverflow.Ellipsis)
+                            Text("${song.artist} · ${song.album}",
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                style = MaterialTheme.typography.bodySmall,
+                                maxLines = 1, overflow = TextOverflow.Ellipsis)
+                        }
+                        IconButton(
+                            onClick = { viewModel.showPlaylistPicker(song.id, song.name) },
+                            modifier = Modifier.size(36.dp),
+                        ) {
+                            Icon(Icons.Filled.Add, "添加到歌单",
+                                tint = MaterialTheme.colorScheme.primary,
+                                modifier = Modifier.size(20.dp))
+                        }
+                    }
+                }
+            }
+            item { Spacer(Modifier.height(16.dp)) }
+        } else {
+            // ── Recently played ──
+            if (recentlyPlayed.isNotEmpty()) {
+                item(key = "recent_header") {
+                    Row(
+                        modifier = Modifier.fillMaxWidth()
+                            .padding(horizontal = 16.dp, vertical = 8.dp),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        Text("最近播放", style = MaterialTheme.typography.titleMedium,
+                            fontWeight = FontWeight.Bold,
+                            color = MaterialTheme.colorScheme.onSurface)
+                        Text("${recentlyPlayed.size} 首",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    }
+                }
+                item(key = "recent_list") {
+                    LazyRow(
+                        contentPadding = PaddingValues(horizontal = 16.dp),
+                        horizontalArrangement = Arrangement.spacedBy(12.dp),
+                    ) {
+                        items(recentlyPlayed, key = { it.id }) { song ->
+                            RecentSongCard(song = song, playerViewModel = playerViewModel)
+                        }
                     }
                 }
             }
 
-            // 加载指示器
-            item(key = "loading") {
-                AnimatedVisibility(
-                    visible = state.isLoading,
-                    modifier = Modifier.animateItem(),
-                    enter = fadeIn(animationSpec = animSpec),
-                    exit = fadeOut(animationSpec = animSpec),
+            // ── Section: My Playlists ──
+            item(key = "playlist_header") {
+                Row(
+                    modifier = Modifier.fillMaxWidth()
+                        .padding(start = 16.dp, end = 16.dp, top = 20.dp, bottom = 8.dp),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically,
                 ) {
+                    Text("我的歌单", style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.onSurface)
+                    if (state.totalPlaylists > 0) {
+                        Text("${state.totalPlaylists} 个 · ${state.totalSongs} 首",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    }
+                }
+            }
+
+            if (state.isLoading && state.userPlaylists.isEmpty()) {
+                item(key = "loading") {
                     Box(
-                        modifier = Modifier.fillMaxWidth().padding(24.dp),
+                        modifier = Modifier.fillMaxWidth().padding(40.dp),
                         contentAlignment = Alignment.Center,
                     ) {
-                        CircularProgressIndicator(
-                            color = MaterialTheme.colorScheme.primary,
+                        CircularProgressIndicator(color = MaterialTheme.colorScheme.primary)
+                    }
+                }
+            } else if (state.totalPlaylists > 0) {
+                // Use the userPlaylists (loaded from search picker) if available,
+                // otherwise fallback to the count-only data
+                item(key = "playlist_stats") {
+                    Row(
+                        modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp),
+                        horizontalArrangement = Arrangement.spacedBy(12.dp),
+                    ) {
+                        PlaylistStatCard("歌单", state.totalPlaylists.toString(),
+                            MaterialTheme.colorScheme.primary, Modifier.weight(1f))
+                        PlaylistStatCard("歌曲", state.totalSongs.toString(),
+                            MaterialTheme.colorScheme.tertiary, Modifier.weight(1f))
+                    }
+                }
+
+                // Quick links
+                item(key = "quick_links") {
+                    Row(
+                        modifier = Modifier.fillMaxWidth()
+                            .padding(horizontal = 16.dp, vertical = 8.dp),
+                        horizontalArrangement = Arrangement.spacedBy(12.dp),
+                    ) {
+                        QuickActionCard(
+                            icon = Icons.Filled.Search,
+                            label = "云贝中心",
+                            onClick = onNavigateToYunbei,
+                            modifier = Modifier.weight(1f),
+                        )
+                        QuickActionCard(
+                            icon = Icons.Filled.MusicNote,
+                            label = "我的私信",
+                            onClick = onNavigateToMessages,
+                            modifier = Modifier.weight(1f),
+                        )
+                        QuickActionCard(
+                            icon = Icons.Filled.Refresh,
+                            label = "刷新数据",
+                            onClick = { viewModel.loadOverview() },
+                            modifier = Modifier.weight(1f),
                         )
                     }
                 }
-            }
 
-            item(key = "bottom_spacer") {
-                Spacer(Modifier.height(32.dp))
+                item(key = "bottom_spacer") { Spacer(Modifier.height(16.dp)) }
+            } else {
+                item(key = "empty") {
+                    Box(
+                        modifier = Modifier.fillMaxWidth().padding(40.dp),
+                        contentAlignment = Alignment.Center,
+                    ) {
+                        Text("暂无歌单，请先登录并同步",
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f))
+                    }
+                }
             }
         }
     }
 }
 
 @Composable
-private fun QuickEntry(
-    icon: ImageVector,
-    title: String,
-    subtitle: String,
-    onClick: () -> Unit,
-) {
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clickable(onClick = onClick)
-            .padding(16.dp),
-        verticalAlignment = Alignment.CenterVertically,
+private fun RecentSongCard(song: PlayingSong, playerViewModel: PlayerViewModel) {
+    Card(
+        modifier = Modifier.width(120.dp),
+        shape = RoundedCornerShape(12.dp),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
+        onClick = { playerViewModel.playSong(song) },
     ) {
-        Icon(
-            icon, null,
-            tint = MaterialTheme.colorScheme.secondary,
-            modifier = Modifier.size(22.dp),
-        )
-        Spacer(Modifier.width(12.dp))
-        Column(Modifier.weight(1f)) {
-            Text(
-                title,
-                color = MaterialTheme.colorScheme.onSurface,
-                style = MaterialTheme.typography.bodyLarge,
-            )
-            Text(
-                subtitle,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                style = MaterialTheme.typography.bodySmall,
-            )
+        Column {
+            Box(
+                modifier = Modifier.fillMaxWidth().aspectRatio(1f)
+                    .clip(RoundedCornerShape(topStart = 12.dp, topEnd = 12.dp)),
+                contentAlignment = Alignment.Center,
+            ) {
+                if (song.coverUrl != null) {
+                    AsyncImage(model = song.coverUrl, contentDescription = null,
+                        modifier = Modifier.fillMaxSize(), contentScale = ContentScale.Crop)
+                } else {
+                    Box(
+                        modifier = Modifier.fillMaxSize()
+                            .background(
+                                Brush.linearGradient(
+                                    listOf(
+                                        MaterialTheme.colorScheme.primary.copy(alpha = 0.3f),
+                                        MaterialTheme.colorScheme.primary.copy(alpha = 0.1f),
+                                    )
+                                )
+                            ),
+                        contentAlignment = Alignment.Center,
+                    ) {
+                        Icon(Icons.Filled.MusicNote, null,
+                            tint = MaterialTheme.colorScheme.primary,
+                            modifier = Modifier.size(32.dp))
+                    }
+                }
+                Box(
+                    modifier = Modifier.fillMaxSize()
+                        .background(MaterialTheme.colorScheme.scrim.copy(alpha = 0.2f)),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    Icon(Icons.Filled.PlayArrow, "播放",
+                        tint = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.9f),
+                        modifier = Modifier.size(32.dp))
+                }
+            }
+            Column(modifier = Modifier.padding(8.dp)) {
+                Text(song.name,
+                    color = MaterialTheme.colorScheme.onSurface,
+                    style = MaterialTheme.typography.bodySmall,
+                    fontWeight = FontWeight.Medium,
+                    maxLines = 1, overflow = TextOverflow.Ellipsis)
+                Spacer(Modifier.height(2.dp))
+                Text(song.artist,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    style = MaterialTheme.typography.labelSmall,
+                    maxLines = 1, overflow = TextOverflow.Ellipsis)
+            }
         }
     }
 }
 
 @Composable
-private fun StatCard(
+private fun PlaylistStatCard(
     label: String,
     value: String,
     valueColor: androidx.compose.ui.graphics.Color,
     modifier: Modifier,
 ) {
     Card(
-        modifier = modifier.heightIn(min = 48.dp),
+        modifier = modifier,
         shape = RoundedCornerShape(12.dp),
-        colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surfaceVariant,
-        ),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
     ) {
         Column(
-            modifier = Modifier.fillMaxWidth().padding(16.dp),
+            modifier = Modifier.fillMaxWidth().padding(vertical = 20.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
-            Text(
-                value,
-                style = MaterialTheme.typography.headlineLarge,
+            Text(value,
+                style = MaterialTheme.typography.displaySmall,
                 color = valueColor,
-            )
-            Spacer(Modifier.height(8.dp))
-            Text(
-                label,
+                fontWeight = FontWeight.Bold)
+            Spacer(Modifier.height(4.dp))
+            Text(label,
                 style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
+                color = MaterialTheme.colorScheme.onSurfaceVariant)
+        }
+    }
+}
+
+@Composable
+private fun QuickActionCard(
+    icon: androidx.compose.ui.graphics.vector.ImageVector,
+    label: String,
+    onClick: () -> Unit,
+    modifier: Modifier,
+) {
+    Card(
+        modifier = modifier,
+        shape = RoundedCornerShape(12.dp),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
+        onClick = onClick,
+    ) {
+        Column(
+            modifier = Modifier.fillMaxWidth().padding(vertical = 16.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+        ) {
+            Icon(icon, null,
+                tint = MaterialTheme.colorScheme.primary,
+                modifier = Modifier.size(24.dp))
+            Spacer(Modifier.height(8.dp))
+            Text(label,
+                style = MaterialTheme.typography.labelSmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant)
         }
     }
 }
