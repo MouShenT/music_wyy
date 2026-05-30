@@ -1,7 +1,6 @@
 package com.example.music_wyy.ui.navigation
 
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Modifier
 import androidx.navigation.NavHostController
 import androidx.navigation.NavType
@@ -21,6 +20,7 @@ import com.example.music_wyy.ui.playlist.PlaylistDetailScreen
 import com.example.music_wyy.ui.playlist.BatchCreateScreen
 import com.example.music_wyy.ui.automation.AutomationScreen
 import com.example.music_wyy.ui.profile.ProfileScreen
+import com.example.music_wyy.ui.settings.SettingsScreen
 import com.example.music_wyy.ui.yunbei.YunbeiScreen
 import org.koin.compose.viewmodel.koinViewModel
 import java.net.URLDecoder
@@ -90,6 +90,7 @@ fun NavGraph(
                 },
                 onNavigateToYunbei = { navController.navigate(Route.Yunbei.route) },
                 onNavigateToMessages = { navController.navigate(Route.Messages.route) },
+                onNavigateToSettings = { navController.navigate(Route.Settings.route) },
             )
         }
         composable(
@@ -110,9 +111,15 @@ fun NavGraph(
                     )
                 },
                 onPlaySong = { songId, songName, artist, album, coverUrl ->
-                    navController.currentBackStackEntry
-                        ?.savedStateHandle
-                        ?.set("playSong", "$songId|$songName|$artist|$album|${coverUrl ?: ""}")
+                    playerViewModel.playSong(
+                        com.example.music_wyy.ui.player.PlayingSong(
+                            id = songId,
+                            name = songName,
+                            artist = artist,
+                            album = album,
+                            coverUrl = coverUrl,
+                        )
+                    )
                     onNavigateToPlayer()
                 },
             )
@@ -161,35 +168,11 @@ fun NavGraph(
         composable(Route.Yunbei.route) {
             YunbeiScreen(onBack = { navController.popBackStack() })
         }
-        composable(Route.Player.route) { backStackEntry ->
-            // Read play intent from previous screen's savedStateHandle
-            val playData = navController
-                .previousBackStackEntry
-                ?.savedStateHandle
-                ?.get<String>("playSong")
-
-            LaunchedEffect(playData) {
-                if (playData != null) {
-                    val parts = playData.split("|", limit = 5)
-                    if (parts.size >= 3) {
-                        playerViewModel.playSong(
-                            com.example.music_wyy.ui.player.PlayingSong(
-                                id = parts[0],
-                                name = parts[1],
-                                artist = parts[2],
-                                album = parts.getOrElse(3) { "" },
-                                coverUrl = parts.getOrElse(4) { "" }.ifBlank { null },
-                            )
-                        )
-                    }
-                    // Clear to avoid re-playing on recomposition
-                    navController.previousBackStackEntry
-                        ?.savedStateHandle
-                        ?.remove<String>("playSong")
-                }
-            }
-
+        composable(Route.Player.route) {
             PlayerScreen(onBack = { navController.popBackStack() })
+        }
+        composable(Route.Settings.route) {
+            SettingsScreen(onBack = { navController.popBackStack() })
         }
     }
 }

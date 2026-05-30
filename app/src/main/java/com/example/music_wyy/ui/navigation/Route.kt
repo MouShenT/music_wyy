@@ -31,6 +31,7 @@ sealed class Route(val route: String) {
     }
     data object Yunbei : Route("yunbei")
     data object Player : Route("player")
+    data object Settings : Route("settings")
 }
 
 data class BottomNavItem(

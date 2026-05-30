@@ -23,18 +23,18 @@ import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.List
 import androidx.compose.material.icons.automirrored.filled.PlaylistPlay
 import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.Download
 import androidx.compose.material.icons.filled.MusicNote
 import androidx.compose.material.icons.filled.Pause
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.Repeat
-import androidx.compose.material.icons.filled.RepeatOn
 import androidx.compose.material.icons.filled.RepeatOneOn
 import androidx.compose.material.icons.filled.Shuffle
-import androidx.compose.material.icons.filled.ShuffleOn
 import androidx.compose.material.icons.filled.SkipNext
 import androidx.compose.material.icons.filled.SkipPrevious
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -45,7 +45,6 @@ import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
-import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -55,6 +54,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import coil3.compose.AsyncImage
 import com.example.music_wyy.ui.theme.BackgroundDark
 import com.example.music_wyy.ui.theme.CardDark
@@ -75,11 +75,16 @@ fun PlayerScreen(
     val song = state.currentSong
 
     if (song == null) {
-        Box(modifier = Modifier.fillMaxSize().background(BackgroundDark), contentAlignment = Alignment.Center) {
+        Box(
+            modifier = Modifier.fillMaxSize().background(BackgroundDark),
+            contentAlignment = Alignment.Center,
+        ) {
             Column(horizontalAlignment = Alignment.CenterHorizontally) {
                 Icon(Icons.Filled.MusicNote, null, tint = TextTertiary, modifier = Modifier.size(64.dp))
                 Spacer(Modifier.height(16.dp))
                 Text("暂无播放歌曲", color = TextSecondary, fontSize = 15.sp)
+                Spacer(Modifier.height(4.dp))
+                Text("从歌单详情页点击歌曲即可播放", color = TextTertiary, fontSize = 12.sp)
             }
         }
         return
@@ -97,9 +102,55 @@ fun PlayerScreen(
             Spacer(Modifier.weight(1f))
             Text("正在播放", color = TextPrimary, fontSize = 14.sp, fontWeight = FontWeight.Medium)
             Spacer(Modifier.weight(1f))
-            IconButton(onClick = { /* toggle playlist visibility */ }) {
-                Icon(Icons.AutoMirrored.Filled.PlaylistPlay, null, tint = TextPrimary)
+            // 下载按钮
+            IconButton(onClick = { viewModel.downloadCurrentSong() }) {
+                if (state.isDownloading) {
+                    CircularProgressIndicator(
+                        color = NeteaseRed,
+                        modifier = Modifier.size(18.dp),
+                        strokeWidth = 2.dp,
+                    )
+                } else {
+                    Icon(Icons.Filled.Download, "下载", tint = TextPrimary)
+                }
             }
+        }
+
+        // 下载结果提示
+        state.downloadResult?.let { msg ->
+            Card(
+                modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp),
+                shape = RoundedCornerShape(8.dp),
+                colors = CardDefaults.cardColors(containerColor = NeteaseRed.copy(alpha = 0.15f)),
+            ) {
+                Text(
+                    msg,
+                    color = if (msg.startsWith("下载失败")) TextPrimary else TextPrimary,
+                    fontSize = 12.sp,
+                    modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
+                )
+            }
+        }
+
+        // 错误提示
+        state.error?.let { err ->
+            Card(
+                modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp),
+                shape = RoundedCornerShape(8.dp),
+                colors = CardDefaults.cardColors(containerColor = NeteaseRed.copy(alpha = 0.15f)),
+            ) {
+                Text(err, color = TextPrimary, fontSize = 12.sp, modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp))
+            }
+        }
+
+        // 缓存状态
+        if (song.cachedPath != null) {
+            Text(
+                "已缓存 · ${formatBytes(state.cacheSize)}",
+                color = NeteaseRed,
+                fontSize = 11.sp,
+                modifier = Modifier.padding(horizontal = 16.dp),
+            )
         }
 
         // 专辑封面
@@ -223,8 +274,8 @@ fun PlayerScreen(
                 IconButton(onClick = { viewModel.next() }, modifier = Modifier.size(48.dp)) {
                     Icon(Icons.Filled.SkipNext, null, tint = TextPrimary, modifier = Modifier.size(32.dp))
                 }
-                IconButton(onClick = { /* toggle like */ }, modifier = Modifier.size(44.dp)) {
-                    Icon(Icons.AutoMirrored.Filled.List, null, tint = TextTertiary, modifier = Modifier.size(22.dp))
+                IconButton(onClick = { viewModel.downloadCurrentSong() }, modifier = Modifier.size(44.dp)) {
+                    Icon(Icons.Filled.Download, "下载", tint = TextTertiary, modifier = Modifier.size(22.dp))
                 }
             }
         }
@@ -281,4 +332,13 @@ private fun formatMs(ms: Long): String {
     val min = totalSec / 60
     val sec = totalSec % 60
     return "%d:%02d".format(min, sec)
+}
+
+private fun formatBytes(bytes: Long): String {
+    if (bytes < 1024) return "$bytes B"
+    val kb = bytes / 1024.0
+    if (kb < 1024) return "%.1f KB".format(kb)
+    val mb = kb / 1024.0
+    if (mb < 1024) return "%.1f MB".format(mb)
+    return "%.2f GB".format(mb / 1024.0)
 }

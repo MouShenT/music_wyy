@@ -100,6 +100,8 @@ val appModule = module {
     // ── DataStore / Session ──
 
     single { CookieStore(androidContext()) }
+    single { com.example.music_wyy.data.local.datastore.SettingsStore(androidContext()) }
+    single { com.example.music_wyy.data.local.SongCache(androidContext(), get()) }
     single { com.example.music_wyy.background.AutomationScheduler(androidContext()) }
     single { com.example.music_wyy.session.UserSession() }
 
@@ -120,5 +122,5 @@ val appModule = module {
     factory { com.example.music_wyy.ui.lyric.LyricViewModel(get(), get()) }
     factory { com.example.music_wyy.ui.message.MsgViewModel(get(), get(), get()) }
     factory { com.example.music_wyy.ui.yunbei.YunbeiViewModel(get(), get()) }
-    factory { com.example.music_wyy.ui.player.PlayerViewModel(get(), get()) }
+    factory { com.example.music_wyy.ui.player.PlayerViewModel(get(), get(), get()) }
 }

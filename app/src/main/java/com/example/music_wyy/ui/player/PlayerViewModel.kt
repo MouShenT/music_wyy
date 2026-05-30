@@ -1,19 +1,13 @@
 package com.example.music_wyy.ui.player
 
-import android.app.PendingIntent
-import android.content.Context
-import android.content.Intent
 import android.net.Uri
-import androidx.annotation.OptIn
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.media3.common.MediaItem
 import androidx.media3.common.MediaMetadata
 import androidx.media3.common.Player
-import androidx.media3.common.util.UnstableApi
 import androidx.media3.exoplayer.ExoPlayer
-import androidx.media3.session.MediaSession
-import androidx.media3.session.MediaSessionService
+import com.example.music_wyy.data.local.SongCache
 import com.example.music_wyy.data.local.datastore.CookieStore
 import com.example.music_wyy.data.remote.NeteaseApi
 import kotlinx.coroutines.CancellationException
@@ -25,6 +19,7 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
+import java.io.File
 
 data class PlayerUiState(
     val isPlaying: Boolean = false,
@@ -35,6 +30,9 @@ data class PlayerUiState(
     val error: String? = null,
     val playlist: List<PlayingSong> = emptyList(),
     val playMode: PlayMode = PlayMode.LIST,
+    val isDownloading: Boolean = false,
+    val downloadResult: String? = null,
+    val cacheSize: Long = 0,
 )
 
 data class PlayingSong(
@@ -44,6 +42,7 @@ data class PlayingSong(
     val album: String,
     val coverUrl: String?,
     val url: String? = null,
+    val cachedPath: String? = null,
     val duration: Int = 0,
 )
 
@@ -52,6 +51,7 @@ enum class PlayMode { SINGLE, LIST, SHUFFLE }
 class PlayerViewModel(
     private val api: NeteaseApi,
     private val cookieStore: CookieStore,
+    private val songCache: SongCache,
 ) : ViewModel() {
 
     private val _state = MutableStateFlow(PlayerUiState())
@@ -59,6 +59,13 @@ class PlayerViewModel(
 
     private var exoPlayer: ExoPlayer? = null
     private val json = Json { ignoreUnknownKeys = true }
+
+    init {
+        viewModelScope.launch {
+            val size = songCache.getCacheSize()
+            _state.update { it.copy(cacheSize = size) }
+        }
+    }
 
     fun setPlayer(player: ExoPlayer) {
         exoPlayer = player
@@ -70,8 +77,12 @@ class PlayerViewModel(
                 _state.update { it.copy(isLoading = state == Player.STATE_BUFFERING) }
                 if (state == Player.STATE_ENDED) next()
             }
-            override fun onPositionDiscontinuity(oldPosition: Player.PositionInfo, newPosition: Player.PositionInfo, reason: Int) {
-                _state.update { it.copy(position = player.currentPosition) }
+            override fun onPositionDiscontinuity(
+                oldPosition: Player.PositionInfo,
+                newPosition: Player.PositionInfo,
+                reason: Int,
+            ) {
+                _state.update { it.copy(position = player.currentPosition, duration = player.duration) }
             }
         })
     }
@@ -84,10 +95,21 @@ class PlayerViewModel(
 
     fun playSong(song: PlayingSong) {
         viewModelScope.launch {
-            _state.update { it.copy(isLoading = true, error = null) }
+            _state.update { it.copy(isLoading = true, error = null, downloadResult = null) }
+
             try {
+                // 1. Check cache first
+                var playUri: String? = song.cachedPath
+                if (playUri == null) {
+                    val cached = songCache.getCachedFile(song.id)
+                    if (cached != null) {
+                        playUri = cached.absolutePath
+                    }
+                }
+
+                // 2. Fetch URL from API if not cached
                 var url = song.url
-                if (url == null) {
+                if (playUri == null && url == null) {
                     val cookie = cookieStore.cookie.first() ?: ""
                     val resp = api.getSongUrl(song.id, cookie = "MUSIC_U=$cookie")
                     val body = resp.string()
@@ -95,14 +117,25 @@ class PlayerViewModel(
                     url = result.data?.firstOrNull()?.url
                 }
 
-                if (url == null) {
+                // 3. Cache the remote URL if available
+                if (url != null && playUri == null) {
+                    val cached = songCache.cacheSong(song.id, url)
+                    if (cached != null) {
+                        playUri = cached.absolutePath
+                        refreshCacheSize()
+                    }
+                }
+
+                if (playUri == null && url == null) {
                     _state.update { it.copy(isLoading = false, error = "该歌曲暂无播放资源") }
                     return@launch
                 }
 
+                val uri = if (playUri != null) Uri.fromFile(File(playUri)) else Uri.parse(url)
+
                 val mediaItem = MediaItem.Builder()
                     .setMediaId(song.id)
-                    .setUri(Uri.parse(url))
+                    .setUri(uri)
                     .setMediaMetadata(
                         MediaMetadata.Builder()
                             .setTitle(song.name)
@@ -123,7 +156,7 @@ class PlayerViewModel(
                 }
                 _state.update {
                     it.copy(
-                        currentSong = song.copy(url = url),
+                        currentSong = song.copy(url = url, cachedPath = playUri),
                         isLoading = false,
                         playlist = playlist,
                     )
@@ -136,12 +169,59 @@ class PlayerViewModel(
         }
     }
 
+    fun downloadCurrentSong() {
+        val song = _state.value.currentSong ?: return
+        viewModelScope.launch {
+            _state.update { it.copy(isDownloading = true, downloadResult = null) }
+            try {
+                val cookie = cookieStore.cookie.first() ?: ""
+                val resp = api.getSongUrl(song.id, cookie = "MUSIC_U=$cookie")
+                val body = resp.string()
+                val result = json.decodeFromString<SongUrlResponse>(body)
+                val url = result.data?.firstOrNull()?.url
+
+                if (url == null) {
+                    _state.update { it.copy(isDownloading = false, downloadResult = "下载失败: 无播放资源") }
+                    return@launch
+                }
+
+                val file = songCache.downloadSong(song.name, song.artist, url)
+                if (file != null) {
+                    _state.update {
+                        it.copy(
+                            isDownloading = false,
+                            downloadResult = "已下载: ${file.name}",
+                        )
+                    }
+                } else {
+                    _state.update { it.copy(isDownloading = false, downloadResult = "下载失败: 网络错误") }
+                }
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                _state.update {
+                    it.copy(isDownloading = false, downloadResult = "下载失败: ${e.localizedMessage}")
+                }
+            }
+        }
+    }
+
+    fun clearCache() {
+        viewModelScope.launch {
+            songCache.clearCache()
+            refreshCacheSize()
+        }
+    }
+
+    private suspend fun refreshCacheSize() {
+        val size = songCache.getCacheSize()
+        _state.update { it.copy(cacheSize = size) }
+    }
+
     fun addToPlaylist(song: PlayingSong) {
         _state.update { state ->
             val list = state.playlist.toMutableList()
-            if (list.none { it.id == song.id }) {
-                list.add(song)
-            }
+            if (list.none { it.id == song.id }) list.add(song)
             state.copy(playlist = list)
         }
     }
@@ -160,10 +240,7 @@ class PlayerViewModel(
             PlayMode.LIST -> (idx + 1) % s.playlist.size
             PlayMode.SHUFFLE -> {
                 if (s.playlist.size <= 1) 0
-                else {
-                    val others = s.playlist.indices.filter { it != idx }
-                    others[others.indices.random()]
-                }
+                else (s.playlist.indices.filter { it != idx }).random()
             }
         }
         s.playlist.getOrNull(nextIdx)?.let { playSong(it) }
@@ -192,40 +269,13 @@ class PlayerViewModel(
     }
 
     fun removeFromPlaylist(songId: String) {
-        _state.update { state ->
-            state.copy(playlist = state.playlist.filter { it.id != songId })
-        }
+        _state.update { it.copy(playlist = it.playlist.filter { s -> s.id != songId }) }
     }
 
     override fun onCleared() {
         exoPlayer?.release()
         exoPlayer = null
     }
-}
-
-@OptIn(UnstableApi::class)
-class MusicPlaybackService : MediaSessionService() {
-    private var mediaSession: MediaSession? = null
-
-    override fun onCreate() {
-        super.onCreate()
-        val player = ExoPlayer.Builder(this).build()
-        mediaSession = MediaSession.Builder(this, player).build()
-    }
-
-    override fun onTaskRemoved(rootIntent: Intent?) {
-        mediaSession?.player?.stop()
-    }
-
-    override fun onDestroy() {
-        mediaSession?.run {
-            player.release()
-            release()
-            mediaSession = null
-        }
-    }
-
-    override fun onGetSession(controllerInfo: MediaSession.ControllerInfo) = mediaSession!!
 }
 
 @Serializable

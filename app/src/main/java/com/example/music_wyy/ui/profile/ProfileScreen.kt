@@ -56,6 +56,7 @@ fun ProfileScreen(
     onLogout: () -> Unit = {},
     onNavigateToYunbei: () -> Unit = {},
     onNavigateToMessages: () -> Unit = {},
+    onNavigateToSettings: () -> Unit = {},
 ) {
     val sessionState by viewModel.sessionState.collectAsStateWithLifecycle()
 
@@ -135,7 +136,12 @@ fun ProfileScreen(
             HorizontalDivider(color = DividerDark)
             ProfileMenuItem(icon = Icons.Filled.Star, title = "我的收藏", subtitle = "收藏的歌单和歌曲")
             HorizontalDivider(color = DividerDark)
-            ProfileMenuItem(icon = Icons.Filled.Settings, title = "设置", subtitle = "API地址、Cookie管理")
+            ProfileMenuItem(
+                icon = Icons.Filled.Settings,
+                title = "设置",
+                subtitle = "缓存管理、下载目录",
+                onClick = onNavigateToSettings,
+            )
         }
 
         Spacer(Modifier.height(24.dp))
