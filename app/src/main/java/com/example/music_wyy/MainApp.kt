@@ -33,6 +33,7 @@ import com.example.music_wyy.ui.navigation.Route
 import com.example.music_wyy.ui.navigation.bottomNavItems
 import com.example.music_wyy.ui.player.MiniPlayer
 import com.example.music_wyy.ui.player.PlayerViewModel
+import java.net.URLEncoder
 import com.example.music_wyy.ui.theme.NeteaseRed
 import com.example.music_wyy.ui.theme.BackgroundDark
 import com.example.music_wyy.ui.theme.TextPrimary
@@ -127,7 +128,17 @@ fun MainApp() {
                     onTogglePlay = { playerViewModel.togglePlay() },
                     onNext = { playerViewModel.next() },
                     onPrevious = { playerViewModel.previous() },
-                    onClick = { navController.navigate(Route.Player.route) },
+                    onClick = {
+                        playerState.currentSong?.let { s ->
+                            navController.navigate(
+                                Route.Lyric.create(
+                                    songId = s.id,
+                                    songName = URLEncoder.encode(s.name, "UTF-8"),
+                                    artist = URLEncoder.encode(s.artist, "UTF-8"),
+                                )
+                            )
+                        }
+                    },
                     onClose = { playerViewModel.stop() },
                     modifier = Modifier.align(Alignment.BottomCenter),
                 )
