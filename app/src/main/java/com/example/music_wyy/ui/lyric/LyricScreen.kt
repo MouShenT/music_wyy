@@ -134,6 +134,7 @@ fun LyricScreen(
     var isProgrammaticScroll by remember { mutableStateOf(false) }
     var userScrolledAway by remember { mutableStateOf(false) }
     var autoReturnJob by remember { mutableStateOf<Job?>(null) }
+    var lastScrolledLine by remember { mutableStateOf(-1) }
 
     // Detect user manually scrolling: isScrollInProgress without programmatic flag
     LaunchedEffect(listState.isScrollInProgress) {
@@ -148,13 +149,14 @@ fun LyricScreen(
         }
     }
 
-    // Auto-scroll to current line
+    // Auto-scroll to current line (instant snap to avoid animation cancellation from rapid position updates)
     LaunchedEffect(currentLineIndex, userScrolledAway) {
-        if (currentLineIndex >= 0 && lines.isNotEmpty() && !userScrolledAway) {
+        if (currentLineIndex >= 0 && currentLineIndex != lastScrolledLine && lines.isNotEmpty() && !userScrolledAway) {
+            lastScrolledLine = currentLineIndex
             isProgrammaticScroll = true
             try {
-                listState.animateScrollToItem(
-                    index = (currentLineIndex - 2).coerceAtLeast(0),
+                listState.scrollToItem(
+                    index = (currentLineIndex + 1).coerceAtLeast(0),
                     scrollOffset = 0,
                 )
             } finally {
