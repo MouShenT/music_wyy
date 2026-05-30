@@ -35,7 +35,7 @@ class LyricViewModel(
     private val _state = MutableStateFlow(LyricUiState())
     val state: StateFlow<LyricUiState> = _state.asStateFlow()
 
-    private val json = Json { ignoreUnknownKeys = true }
+    private val json = Json { ignoreUnknownKeys = true; coerceInputValues = true }
 
     fun loadLyric(songId: String, songName: String = "", artist: String = "") {
         _state.update { it.copy(songId = songId, songName = songName, artist = artist) }

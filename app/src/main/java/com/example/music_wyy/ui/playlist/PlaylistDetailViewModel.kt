@@ -66,7 +66,7 @@ class PlaylistDetailViewModel(
     private val _state = MutableStateFlow(PlaylistDetailUiState())
     val state: StateFlow<PlaylistDetailUiState> = _state.asStateFlow()
 
-    private val json = Json { ignoreUnknownKeys = true }
+    private val json = Json { ignoreUnknownKeys = true; coerceInputValues = true }
 
     fun loadPlaylist(playlistId: String) {
         viewModelScope.launch {

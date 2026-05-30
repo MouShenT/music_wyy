@@ -88,6 +88,9 @@ interface NeteaseApi {
     @GET("/yunbei")
     suspend fun getYunbei(@Query("cookie") cookie: String): ResponseBody
 
+    @GET("/yunbei/info")
+    suspend fun getYunbeiInfo(@Query("cookie") cookie: String): ResponseBody
+
     @GET("/yunbei/tasks")
     suspend fun getYunbeiTasks(@Query("cookie") cookie: String): ResponseBody
 

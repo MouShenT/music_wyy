@@ -58,7 +58,7 @@ class PlaylistViewModel(
     private val _state = MutableStateFlow(PlaylistUiState())
     val state: StateFlow<PlaylistUiState> = _state.asStateFlow()
 
-    private val json = Json { ignoreUnknownKeys = true }
+    private val json = Json { ignoreUnknownKeys = true; coerceInputValues = true }
 
     init {
         loadPlaylists()

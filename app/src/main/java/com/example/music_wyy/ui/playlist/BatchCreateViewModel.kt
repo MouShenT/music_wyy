@@ -43,7 +43,7 @@ class BatchCreateViewModel(
     private val _state = MutableStateFlow(BatchCreateUiState())
     val state: StateFlow<BatchCreateUiState> = _state.asStateFlow()
 
-    private val json = Json { ignoreUnknownKeys = true }
+    private val json = Json { ignoreUnknownKeys = true; coerceInputValues = true }
 
     fun updatePlaylistName(name: String) { _state.update { it.copy(playlistName = name) } }
     fun updateSongInput(input: String) { _state.update { it.copy(songInput = input) } }

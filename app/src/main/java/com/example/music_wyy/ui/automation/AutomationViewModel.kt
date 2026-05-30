@@ -51,7 +51,7 @@ class AutomationViewModel(
     private val _state = MutableStateFlow(AutomationUiState())
     val state: StateFlow<AutomationUiState> = _state.asStateFlow()
 
-    private val json = Json { ignoreUnknownKeys = true }
+    private val json = Json { ignoreUnknownKeys = true; coerceInputValues = true }
 
     init {
         // Restore sign-in state from session

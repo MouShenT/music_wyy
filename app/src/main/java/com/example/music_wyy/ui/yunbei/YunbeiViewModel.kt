@@ -39,7 +39,7 @@ class YunbeiViewModel(
     private val _state = MutableStateFlow(YunbeiUiState())
     val state: StateFlow<YunbeiUiState> = _state.asStateFlow()
 
-    private val json = Json { ignoreUnknownKeys = true }
+    private val json = Json { ignoreUnknownKeys = true; coerceInputValues = true }
 
     fun load() {
         viewModelScope.launch {
@@ -48,12 +48,16 @@ class YunbeiViewModel(
                 val cookie = cookieStore.cookie.first() ?: ""
                 val c = "MUSIC_U=$cookie"
 
-                // 并行获取云贝信息 + 任务列表
-                val yunbeiDeferred = async { api.getYunbei(c) }
+                // 并行获取云贝余额 + 签到信息 + 任务列表
+                val infoDeferred = async { api.getYunbeiInfo(c) }
+                val signDeferred = async { api.getYunbei(c) }
                 val tasksDeferred = async { api.getYunbeiTasks(c) }
 
-                val yunbeiBody = yunbeiDeferred.await().string()
-                val yunbeiResult = json.decodeFromString<YunbeiResponse>(yunbeiBody)
+                val infoBody = infoDeferred.await().string()
+                val infoResult = json.decodeFromString<YunbeiInfoResponse>(infoBody)
+
+                val signBody = signDeferred.await().string()
+                val signResult = json.decodeFromString<YunbeiSignResponse>(signBody)
 
                 val tasksBody = tasksDeferred.await().string()
                 val tasksResult = json.decodeFromString<YunbeiTasksResponse>(tasksBody)
@@ -72,8 +76,8 @@ class YunbeiViewModel(
                 _state.update {
                     it.copy(
                         isLoading = false,
-                        point = if (yunbeiResult.code == 200) yunbeiResult.point else it.point,
-                        mobileSigned = if (yunbeiResult.code == 200) yunbeiResult.mobileSign else false,
+                        point = if (infoResult.code == 200) infoResult.point else it.point,
+                        mobileSigned = signResult.mobileSign,
                         tasks = tasks,
                     )
                 }
@@ -87,9 +91,14 @@ class YunbeiViewModel(
 }
 
 @Serializable
-private data class YunbeiResponse(
+private data class YunbeiInfoResponse(
     val code: Int = -1,
     val point: Int = 0,
+)
+
+@Serializable
+private data class YunbeiSignResponse(
+    val code: Int = -1,
     val mobileSign: Boolean = false,
 )
 

@@ -19,7 +19,7 @@ class SigninWorker(
     private val api: NeteaseApi by inject()
     private val cookieStore: CookieStore by inject()
 
-    private val json = Json { ignoreUnknownKeys = true }
+    private val json = Json { ignoreUnknownKeys = true; coerceInputValues = true }
 
     override suspend fun doWork(): Result {
         val cookie = cookieStore.cookie.first() ?: ""

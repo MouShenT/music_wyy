@@ -30,7 +30,7 @@ data class MsgUiState(
 data class MsgConversation(
     val uid: String,
     val nickname: String,
-    val avatarUrl: String,
+    val avatarUrl: String?,
     val lastMsg: String,
     val lastTime: Long,
     val unread: Int,
@@ -53,7 +53,7 @@ class MsgViewModel(
     private val _state = MutableStateFlow(MsgUiState())
     val state: StateFlow<MsgUiState> = _state.asStateFlow()
 
-    private val json = Json { ignoreUnknownKeys = true }
+    private val json = Json { ignoreUnknownKeys = true; coerceInputValues = true }
 
     fun loadConversations() {
         viewModelScope.launch {
@@ -156,7 +156,7 @@ private data class ConvItem(
 private data class ConvUser(
     val userId: Long = 0,
     val nickname: String = "",
-    val avatarUrl: String = "",
+    val avatarUrl: String? = null,
 )
 
 @Serializable
