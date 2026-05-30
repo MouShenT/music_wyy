@@ -1,25 +1,39 @@
 package com.example.music_wyy.ui.navigation
 
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Modifier
 import androidx.navigation.NavHostController
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.navArgument
+import com.example.music_wyy.ui.ai.AiSearchScreen
 import com.example.music_wyy.ui.home.HomeScreen
 import com.example.music_wyy.ui.login.LoginScreen
+import com.example.music_wyy.ui.lyric.LyricScreen
+import com.example.music_wyy.ui.message.MsgListScreen
+import com.example.music_wyy.ui.message.MsgDetailScreen
+import com.example.music_wyy.ui.player.PlayerScreen
+import com.example.music_wyy.ui.player.PlayerViewModel
 import com.example.music_wyy.ui.playlist.PlaylistScreen
 import com.example.music_wyy.ui.playlist.PlaylistDetailScreen
 import com.example.music_wyy.ui.playlist.BatchCreateScreen
 import com.example.music_wyy.ui.automation.AutomationScreen
 import com.example.music_wyy.ui.profile.ProfileScreen
+import com.example.music_wyy.ui.yunbei.YunbeiScreen
+import org.koin.compose.viewmodel.koinViewModel
+import java.net.URLDecoder
+import java.net.URLEncoder
 
 @Composable
 fun NavGraph(
     navController: NavHostController,
     modifier: Modifier = Modifier,
+    onNavigateToPlayer: () -> Unit = {},
 ) {
+    val playerViewModel: PlayerViewModel = koinViewModel()
+
     NavHost(
         navController = navController,
         startDestination = Route.Login.route,
@@ -35,7 +49,10 @@ fun NavGraph(
             )
         }
         composable(Route.Home.route) {
-            HomeScreen()
+            HomeScreen(
+                onNavigateToYunbei = { navController.navigate(Route.Yunbei.route) },
+                onNavigateToMessages = { navController.navigate(Route.Messages.route) },
+            )
         }
         composable(Route.Playlists.route) {
             PlaylistScreen(
@@ -50,15 +67,30 @@ fun NavGraph(
         composable(Route.BatchCreate.route) {
             BatchCreateScreen(onBack = { navController.popBackStack() })
         }
+        composable(Route.AiSearch.route) {
+            AiSearchScreen(
+                onBack = { navController.popBackStack() },
+                onFillBatchCreate = { text ->
+                    navController.previousBackStackEntry
+                        ?.savedStateHandle
+                        ?.set("aiResult", text)
+                    navController.popBackStack()
+                },
+            )
+        }
         composable(Route.Automation.route) {
             AutomationScreen()
         }
         composable(Route.Profile.route) {
-            ProfileScreen(onLogout = {
-                navController.navigate(Route.Login.route) {
-                    popUpTo(0) { inclusive = true }
-                }
-            })
+            ProfileScreen(
+                onLogout = {
+                    navController.navigate(Route.Login.route) {
+                        popUpTo(0) { inclusive = true }
+                    }
+                },
+                onNavigateToYunbei = { navController.navigate(Route.Yunbei.route) },
+                onNavigateToMessages = { navController.navigate(Route.Messages.route) },
+            )
         }
         composable(
             route = Route.PlaylistDetail.route,
@@ -68,7 +100,96 @@ fun NavGraph(
             PlaylistDetailScreen(
                 playlistId = playlistId,
                 onBack = { navController.popBackStack() },
+                onSongClick = { songId, songName, artist ->
+                    navController.navigate(
+                        Route.Lyric.create(
+                            songId = songId,
+                            songName = URLEncoder.encode(songName, "UTF-8"),
+                            artist = URLEncoder.encode(artist, "UTF-8"),
+                        )
+                    )
+                },
+                onPlaySong = { songId, songName, artist, album, coverUrl ->
+                    navController.currentBackStackEntry
+                        ?.savedStateHandle
+                        ?.set("playSong", "$songId|$songName|$artist|$album|${coverUrl ?: ""}")
+                    onNavigateToPlayer()
+                },
             )
+        }
+        composable(
+            route = Route.Lyric.route,
+            arguments = listOf(
+                navArgument("songId") { type = NavType.StringType },
+                navArgument("songName") { type = NavType.StringType },
+                navArgument("artist") { type = NavType.StringType },
+            ),
+        ) { backStackEntry ->
+            val songId = backStackEntry.arguments?.getString("songId") ?: return@composable
+            val songName = URLDecoder.decode(backStackEntry.arguments?.getString("songName") ?: "", "UTF-8")
+            val artist = URLDecoder.decode(backStackEntry.arguments?.getString("artist") ?: "", "UTF-8")
+            LyricScreen(
+                songId = songId,
+                songName = songName,
+                artist = artist,
+                onBack = { navController.popBackStack() },
+            )
+        }
+        composable(Route.Messages.route) {
+            MsgListScreen(
+                onBack = { navController.popBackStack() },
+                onConversationClick = { uid, nickname ->
+                    navController.navigate(Route.MessageDetail.create(uid, nickname))
+                },
+            )
+        }
+        composable(
+            route = Route.MessageDetail.route,
+            arguments = listOf(
+                navArgument("uid") { type = NavType.StringType },
+                navArgument("nickname") { type = NavType.StringType },
+            ),
+        ) { backStackEntry ->
+            val uid = backStackEntry.arguments?.getString("uid") ?: return@composable
+            val nickname = URLDecoder.decode(backStackEntry.arguments?.getString("nickname") ?: "", "UTF-8")
+            MsgDetailScreen(
+                uid = uid,
+                nickname = nickname,
+                onBack = { navController.popBackStack() },
+            )
+        }
+        composable(Route.Yunbei.route) {
+            YunbeiScreen(onBack = { navController.popBackStack() })
+        }
+        composable(Route.Player.route) { backStackEntry ->
+            // Read play intent from previous screen's savedStateHandle
+            val playData = navController
+                .previousBackStackEntry
+                ?.savedStateHandle
+                ?.get<String>("playSong")
+
+            LaunchedEffect(playData) {
+                if (playData != null) {
+                    val parts = playData.split("|", limit = 5)
+                    if (parts.size >= 3) {
+                        playerViewModel.playSong(
+                            com.example.music_wyy.ui.player.PlayingSong(
+                                id = parts[0],
+                                name = parts[1],
+                                artist = parts[2],
+                                album = parts.getOrElse(3) { "" },
+                                coverUrl = parts.getOrElse(4) { "" }.ifBlank { null },
+                            )
+                        )
+                    }
+                    // Clear to avoid re-playing on recomposition
+                    navController.previousBackStackEntry
+                        ?.savedStateHandle
+                        ?.remove<String>("playSong")
+                }
+            }
+
+            PlayerScreen(onBack = { navController.popBackStack() })
         }
     }
 }

@@ -18,9 +18,19 @@ sealed class Route(val route: String) {
     data object Automation : Route("automation")
     data object Profile : Route("profile")
     data object BatchCreate : Route("batch_create")
+    data object AiSearch : Route("ai_search")
     data object PlaylistDetail : Route("playlist/{playlistId}") {
         fun create(playlistId: String) = "playlist/$playlistId"
     }
+    data object Lyric : Route("lyric/{songId}/{songName}/{artist}") {
+        fun create(songId: String, songName: String, artist: String) = "lyric/$songId/$songName/$artist"
+    }
+    data object Messages : Route("messages")
+    data object MessageDetail : Route("messages/{uid}/{nickname}") {
+        fun create(uid: String, nickname: String) = "messages/$uid/$nickname"
+    }
+    data object Yunbei : Route("yunbei")
+    data object Player : Route("player")
 }
 
 data class BottomNavItem(

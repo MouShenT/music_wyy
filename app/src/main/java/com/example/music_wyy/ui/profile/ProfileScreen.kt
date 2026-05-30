@@ -1,6 +1,7 @@
 package com.example.music_wyy.ui.profile
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -17,8 +18,10 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ChevronRight
 import androidx.compose.material.icons.automirrored.filled.Logout
+import androidx.compose.material.icons.filled.ChevronRight
+import androidx.compose.material.icons.filled.Cloud
+import androidx.compose.material.icons.filled.MailOutline
 import androidx.compose.material.icons.filled.MusicNote
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.Star
@@ -51,6 +54,8 @@ import org.koin.compose.viewmodel.koinViewModel
 fun ProfileScreen(
     viewModel: ProfileViewModel = koinViewModel(),
     onLogout: () -> Unit = {},
+    onNavigateToYunbei: () -> Unit = {},
+    onNavigateToMessages: () -> Unit = {},
 ) {
     val sessionState by viewModel.sessionState.collectAsState()
 
@@ -114,6 +119,20 @@ fun ProfileScreen(
             shape = RoundedCornerShape(12.dp),
             colors = CardDefaults.cardColors(containerColor = CardDark),
         ) {
+            ProfileMenuItem(
+                icon = Icons.Filled.Cloud,
+                title = "云贝中心",
+                subtitle = "查看云贝余额和任务",
+                onClick = onNavigateToYunbei,
+            )
+            HorizontalDivider(color = DividerDark)
+            ProfileMenuItem(
+                icon = Icons.Filled.MailOutline,
+                title = "我的私信",
+                subtitle = "查看收到的私信",
+                onClick = onNavigateToMessages,
+            )
+            HorizontalDivider(color = DividerDark)
             ProfileMenuItem(icon = Icons.Filled.Star, title = "我的收藏", subtitle = "收藏的歌单和歌曲")
             HorizontalDivider(color = DividerDark)
             ProfileMenuItem(icon = Icons.Filled.Settings, title = "设置", subtitle = "API地址、Cookie管理")
@@ -150,10 +169,12 @@ private fun ProfileMenuItem(
     icon: androidx.compose.ui.graphics.vector.ImageVector,
     title: String,
     subtitle: String,
+    onClick: () -> Unit = {},
 ) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
+            .clickable(onClick = onClick)
             .padding(16.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {

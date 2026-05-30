@@ -1,0 +1,47 @@
+# ===========================================
+# 网易云工具 App 运行环境
+# ===========================================
+# AI 服务: 端口 8100 (通过宿主机 OpenClaw 网关代理 LLM)
+# Redis:   端口 6380 (缓存，ai-api 通过 localhost 访问)
+# ===========================================
+
+services:
+  ai-api:
+    image: python:3.13-slim
+    container_name: wyy_ai_service
+    working_dir: /app
+    network_mode: host
+    volumes:
+      - ./ai_service:/app
+      - ./data:/data
+    environment:
+      - GATEWAY_HOST=127.0.0.1
+      - GATEWAY_PORT=18789
+      - LLM_MODEL=deepseek/deepseek-chat
+      - REDIS_URL=redis://127.0.0.1:6380
+    command: >
+      sh -c "pip install fastapi uvicorn openai redis pydantic --quiet &&
+             uvicorn main:app --host 127.0.0.1 --port 8100"
+    restart: unless-stopped
+    labels:
+      project: "wyy_ai"
+      description: "网易云工具App运行环境-AI对话服务"
+
+  redis:
+    image: redis:7-alpine
+    container_name: wyy_redis
+    ports:
+      - "127.0.0.1:6380:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      retries: 3
+    restart: unless-stopped
+    labels:
+      project: "wyy_ai"
+      description: "网易云工具App运行环境-缓存服务"
+
+volumes:
+  redis_data:

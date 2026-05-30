@@ -5,6 +5,7 @@ import androidx.lifecycle.viewModelScope
 import com.example.music_wyy.data.local.datastore.CookieStore
 import com.example.music_wyy.data.remote.NeteaseApi
 import com.example.music_wyy.session.UserSession
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -44,7 +45,13 @@ class HomeViewModel(
     init {
         val session = userSession.state.value
         if (session.isLoggedIn) {
-            _state.update { it.copy(nickname = session.nickname) }
+            _state.update {
+                it.copy(
+                    nickname = session.nickname,
+                    todaySigned = session.todaySigned,
+                    todayPoints = session.todayPoints,
+                )
+            }
             loadOverview()
         }
     }
@@ -55,9 +62,11 @@ class HomeViewModel(
 
             try {
                 val cookie = cookieStore.cookie.first() ?: ""
-                if (cookie.isBlank()) return@launch
+                if (cookie.isBlank()) {
+                    _state.update { it.copy(isLoading = false) }
+                    return@launch
+                }
 
-                // Load playlists count
                 val uid = userSession.state.value.userId.toString()
                 val resp = api.getUserPlaylists(uid, "MUSIC_U=$cookie")
                 val body = resp.string()
@@ -69,15 +78,20 @@ class HomeViewModel(
                     )
                 }
 
-                // Check signin status
+                // Check signin status (calling dailySignin returns -2 if already signed in)
                 val signResp = api.dailySignin("MUSIC_U=$cookie")
                 val signBody = signResp.string()
                 val signResult = json.decodeFromString<SigninResponse>(signBody)
                 if (signResult.code == -2) {
                     _state.update { it.copy(todaySigned = true) }
+                    userSession.setSignedIn(true)
                 } else if (signResult.code == 200) {
-                    _state.update { it.copy(todaySigned = true, todayPoints = signResult.point ?: 0) }
+                    val points = signResult.point ?: 0
+                    _state.update { it.copy(todaySigned = true, todayPoints = points) }
+                    userSession.setSignedIn(true, points)
                 }
+            } catch (e: CancellationException) {
+                throw e
             } catch (_: Exception) {
             } finally {
                 _state.update { it.copy(isLoading = false) }

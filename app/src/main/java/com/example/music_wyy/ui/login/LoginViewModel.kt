@@ -84,7 +84,6 @@ class LoginViewModel(
                 val result = apiResp.data
 
                 if (result != null && result.code == 200 && result.profile != null) {
-                    cookieStore.saveCookie(c)
                     val uid = result.account?.id ?: 0
                     userSession.setUser(uid, result.profile.nickname, result.profile.avatarUrl)
                     _state.update {
@@ -95,6 +94,8 @@ class LoginViewModel(
                             avatarUrl = result.profile.avatarUrl,
                         )
                     }
+                    // Save cookie after state update to avoid re-triggering checkSavedCookie race
+                    cookieStore.saveCookie(c)
                 } else {
                     _state.update {
                         it.copy(isLoading = false, error = "Cookie 无效或已过期")

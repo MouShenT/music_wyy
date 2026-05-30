@@ -5,6 +5,8 @@ import androidx.lifecycle.viewModelScope
 import com.example.music_wyy.background.AutomationScheduler
 import com.example.music_wyy.data.local.datastore.CookieStore
 import com.example.music_wyy.data.remote.NeteaseApi
+import com.example.music_wyy.session.UserSession
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -43,6 +45,7 @@ class AutomationViewModel(
     private val api: NeteaseApi,
     private val cookieStore: CookieStore,
     private val scheduler: AutomationScheduler,
+    private val userSession: UserSession,
 ) : ViewModel() {
 
     private val _state = MutableStateFlow(AutomationUiState())
@@ -51,6 +54,11 @@ class AutomationViewModel(
     private val json = Json { ignoreUnknownKeys = true }
 
     init {
+        // Restore sign-in state from session
+        val session = userSession.state.value
+        if (session.todaySigned) {
+            _state.update { it.copy(todaySigned = true, todayPoints = session.todayPoints) }
+        }
         val signTask = _state.value.tasks.firstOrNull { it.id == "sign" }
         if (signTask?.enabled == true) {
             scheduler.scheduleDailySignin()
@@ -61,8 +69,10 @@ class AutomationViewModel(
         _state.update {
             it.copy(tasks = it.tasks.map { t -> if (t.id == id) t.copy(enabled = enabled) else t })
         }
-        if (id == "sign") {
-            if (enabled) scheduler.scheduleDailySignin() else scheduler.cancelDailySignin()
+        when (id) {
+            "sign" -> if (enabled) scheduler.scheduleDailySignin() else scheduler.cancelDailySignin()
+            "scrobble" -> if (enabled) scheduler.scheduleScrobble() else scheduler.cancelScrobble()
+            "yunbei" -> if (enabled) scheduler.scheduleYunbei() else scheduler.cancelYunbei()
         }
     }
 
@@ -77,23 +87,32 @@ class AutomationViewModel(
                 val result = json.decodeFromString<SigninResponse>(body)
 
                 if (result.code == 200) {
+                    val points = result.point ?: 0
                     _state.update {
                         it.copy(
                             isRunning = false,
                             todaySigned = true,
-                            todayPoints = result.point ?: 0,
-                            resultMessage = "签到成功 +${result.point ?: 0} 积分",
+                            todayPoints = points,
+                            resultMessage = "签到成功 +$points 积分",
                         )
                     }
+                    userSession.setSignedIn(true, points)
                 } else if (result.code == -2) {
                     _state.update {
-                        it.copy(isRunning = false, resultMessage = "今日已签到，无需重复")
+                        it.copy(
+                            isRunning = false,
+                            todaySigned = true,
+                            resultMessage = "今日已签到，无需重复",
+                        )
                     }
+                    userSession.setSignedIn(true)
                 } else {
                     _state.update {
                         it.copy(isRunning = false, resultMessage = result.msg ?: "签到失败")
                     }
                 }
+            } catch (e: CancellationException) {
+                throw e
             } catch (e: Exception) {
                 _state.update {
                     it.copy(

@@ -1,24 +1,91 @@
+# ── Gradle / Build ──
 *.iml
 .gradle
 /local.properties
+/build
+/captures
+.externalNativeBuild
+.cxx
+/app/build
+/app/release
+!gradle/wrapper/gradle-wrapper.jar
+!gradle/wrapper/gradle-wrapper.properties
+local.properties
+
+# ── IDE ──
 /.idea/caches
 /.idea/libraries
 /.idea/modules.xml
 /.idea/workspace.xml
 /.idea/navEditor.xml
 /.idea/assetWizardSettings.xml
+.idea/
+*.iml
+*.iws
+*.ipr
+
+# ── Android ──
+*.apk
+*.aab
+*.dex
+*.class
+*.log
+gen/
+out/
+.navigation/
+*.hprof
+
+# ── OS ──
 .DS_Store
-/build
-/captures
-.externalNativeBuild
-.cxx
-local.properties
-/app/build
-/app/release
-*.tmp
-/.claude/settings.local.json
+Thumbs.db
+*.swp
+*.swo
+*~
+
+# ── Secrets / Credentials ──
+*.env
+*.env.*
+.env*
+!*.env.example
+secrets/
+credentials/
+*.keystore
+*.jks
+*.p12
+google-services.json
+
+# ── Docs / Non-code ──
+*.md
+!CLAUDE.md
+docs/
+*.pdf
+*.txt
+!gradle/wrapper/gradle-wrapper.properties
+
+# ── Python (AI Service) ──
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+env/
+*.egg
+
+# ── Claude ──
+.claude/plans/
+.claude/projects/
+.claude/memory/
+.claude/settings.local.json
 /.claude/skills/android
 /.claude/skills/chrisbanes
 /.claude/skills/hue
 /.claude/skills/kotlin
 /.claude/skills/material-3
+
+# ── Misc ──
+*.tmp
+*.bak
+*.orig
+.externalNativeBuild
+.cxx
+/tools

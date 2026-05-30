@@ -79,6 +79,11 @@ dependencies {
     // Image Loading
     implementation(libs.coil.compose)
 
+    // Media3 (ExoPlayer)
+    implementation(libs.media3.exoplayer)
+    implementation(libs.media3.session)
+    implementation(libs.media3.ui)
+
     // Charts
     implementation(libs.vico.compose.m3)
 

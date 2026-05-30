@@ -10,6 +10,8 @@ data class UserSessionState(
     val userId: Long = 0,
     val nickname: String? = null,
     val avatarUrl: String? = null,
+    val todaySigned: Boolean = false,
+    val todayPoints: Int = 0,
 )
 
 class UserSession {
@@ -20,6 +22,10 @@ class UserSession {
         _state.update {
             UserSessionState(isLoggedIn = true, userId = userId, nickname = nickname, avatarUrl = avatarUrl)
         }
+    }
+
+    fun setSignedIn(signed: Boolean, points: Int = 0) {
+        _state.update { it.copy(todaySigned = signed, todayPoints = points) }
     }
 
     fun clear() {

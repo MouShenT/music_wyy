@@ -1,5 +1,6 @@
 package com.example.music_wyy.ui.playlist
 
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -18,7 +19,9 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import android.content.Intent
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.Lyrics
 import androidx.compose.material.icons.filled.MusicNote
+import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.Share
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -55,6 +58,8 @@ import org.koin.compose.viewmodel.koinViewModel
 fun PlaylistDetailScreen(
     playlistId: String,
     onBack: () -> Unit,
+    onSongClick: (songId: String, songName: String, artist: String) -> Unit = { _, _, _ -> },
+    onPlaySong: (songId: String, songName: String, artist: String, album: String, coverUrl: String?) -> Unit = { _, _, _, _, _ -> },
     viewModel: PlaylistDetailViewModel = koinViewModel(),
 ) {
     val state by viewModel.state.collectAsState()
@@ -154,7 +159,16 @@ fun PlaylistDetailScreen(
 
                 // 歌曲列表
                 itemsIndexed(state.songs, key = { _, song -> song.id }) { index, song ->
-                    SongRow(index = index + 1, song = song)
+                    SongRow(
+                        index = index + 1,
+                        song = song,
+                        onPlay = {
+                            onPlaySong(song.id, song.name, song.artists, song.album, state.coverUrl)
+                        },
+                        onLyric = {
+                            onSongClick(song.id, song.name, song.artists)
+                        },
+                    )
                 }
             }
         }
@@ -162,13 +176,19 @@ fun PlaylistDetailScreen(
 }
 
 @Composable
-private fun SongRow(index: Int, song: SongItem) {
+private fun SongRow(
+    index: Int,
+    song: SongItem,
+    onPlay: () -> Unit,
+    onLyric: () -> Unit,
+) {
     val minutes = song.duration / 1000 / 60
     val seconds = (song.duration / 1000) % 60
 
     Row(
         modifier = Modifier
             .fillMaxWidth()
+            .clickable(onClick = onPlay)
             .padding(vertical = 6.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
@@ -178,7 +198,14 @@ private fun SongRow(index: Int, song: SongItem) {
             fontSize = 13.sp,
             modifier = Modifier.width(32.dp),
         )
-        Spacer(Modifier.width(8.dp))
+        Spacer(Modifier.width(4.dp))
+
+        // 播放按钮
+        IconButton(onClick = onPlay, modifier = Modifier.size(28.dp)) {
+            Icon(Icons.Filled.PlayArrow, null, tint = TextPrimary, modifier = Modifier.size(16.dp))
+        }
+
+        Spacer(Modifier.width(4.dp))
         Column(modifier = Modifier.weight(1f)) {
             Text(song.name, color = TextPrimary, fontSize = 14.sp, maxLines = 1, overflow = TextOverflow.Ellipsis)
             Spacer(Modifier.height(2.dp))
@@ -190,7 +217,13 @@ private fun SongRow(index: Int, song: SongItem) {
                 overflow = TextOverflow.Ellipsis,
             )
         }
-        Spacer(Modifier.width(8.dp))
+
+        // 歌词按钮
+        IconButton(onClick = onLyric, modifier = Modifier.size(28.dp)) {
+            Icon(Icons.Filled.Lyrics, null, tint = TextSecondary, modifier = Modifier.size(16.dp))
+        }
+
+        Spacer(Modifier.width(4.dp))
         Text(
             if (song.duration > 0) "%d:%02d".format(minutes, seconds) else "",
             color = TextTertiary,

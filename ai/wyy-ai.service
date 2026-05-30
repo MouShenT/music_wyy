@@ -1,0 +1,18 @@
+[Unit]
+Description=网易云工具App AI对话服务
+After=network.target
+
+[Service]
+Type=simple
+WorkingDirectory=/opt/wyy_ai/ai_service
+EnvironmentFile=/root/.openclaw/.env
+Environment="LLM_BASE_URL=https://api.deepseek.com"
+Environment="LLM_MODEL=deepseek-chat"
+Environment="REDIS_URL=redis://127.0.0.1:6380"
+PassEnvironment=DEEPSEEK_API_KEY
+ExecStart=/opt/wyy_ai/venv/bin/uvicorn main:app --host 0.0.0.0 --port 8100
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target

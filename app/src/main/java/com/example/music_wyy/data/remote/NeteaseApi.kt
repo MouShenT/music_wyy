@@ -51,6 +51,60 @@ interface NeteaseApi {
         @Query("tracks") tracks: String,
         @Query("cookie") cookie: String,
     ): ResponseBody
+
+    @GET("/playlist/subscribe")
+    suspend fun subscribePlaylist(
+        @Query("id") id: String,
+        @Query("t") type: Int = 1,
+        @Query("cookie") cookie: String,
+    ): ResponseBody
+
+    // ── 歌词 ──
+
+    @GET("/lyric")
+    suspend fun getLyric(
+        @Query("id") id: String,
+        @Query("cookie") cookie: String,
+    ): ResponseBody
+
+    // ── 私信 ──
+
+    @GET("/msg/private")
+    suspend fun getPrivateMsgs(
+        @Query("limit") limit: Int = 20,
+        @Query("offset") offset: Int = 0,
+        @Query("cookie") cookie: String,
+    ): ResponseBody
+
+    @GET("/msg/private/history")
+    suspend fun getPrivateMsgHistory(
+        @Query("uid") uid: String,
+        @Query("limit") limit: Int = 50,
+        @Query("cookie") cookie: String,
+    ): ResponseBody
+
+    // ── 云贝 ──
+
+    @GET("/yunbei")
+    suspend fun getYunbei(@Query("cookie") cookie: String): ResponseBody
+
+    @GET("/yunbei/tasks")
+    suspend fun getYunbeiTasks(@Query("cookie") cookie: String): ResponseBody
+
+    // ── 歌曲 URL / 详情 ──
+
+    @GET("/song/url/v1")
+    suspend fun getSongUrl(
+        @Query("id") id: String,
+        @Query("level") level: String = "standard",
+        @Query("cookie") cookie: String,
+    ): ResponseBody
+
+    @GET("/song/detail")
+    suspend fun getSongDetail(
+        @Query("ids") ids: String,
+        @Query("cookie") cookie: String,
+    ): ResponseBody
 }
 
 @Serializable

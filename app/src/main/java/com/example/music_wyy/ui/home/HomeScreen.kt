@@ -1,5 +1,6 @@
 package com.example.music_wyy.ui.home
 
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
@@ -16,6 +17,10 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.List
+import androidx.compose.material.icons.filled.AutoAwesome
+import androidx.compose.material.icons.filled.Cloud
+import androidx.compose.material.icons.filled.MailOutline
 import androidx.compose.material.icons.filled.MusicNote
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material3.Card
@@ -28,17 +33,19 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.music_wyy.ui.theme.BackgroundDark
 import com.example.music_wyy.ui.theme.CardDark
 import com.example.music_wyy.ui.theme.NeteaseRed
+import com.example.music_wyy.ui.theme.NeteaseRedLight
 import com.example.music_wyy.ui.theme.TextPrimary
 import com.example.music_wyy.ui.theme.TextSecondary
 import com.example.music_wyy.ui.theme.TextTertiary
@@ -48,8 +55,10 @@ import org.koin.compose.viewmodel.koinViewModel
 @Composable
 fun HomeScreen(
     viewModel: HomeViewModel = koinViewModel(),
+    onNavigateToYunbei: () -> Unit = {},
+    onNavigateToMessages: () -> Unit = {},
 ) {
-    val state by viewModel.state.collectAsState()
+    val state by viewModel.state.collectAsStateWithLifecycle()
 
     Column(modifier = Modifier.fillMaxSize()) {
         TopAppBar(
@@ -116,6 +125,28 @@ fun HomeScreen(
                 StatCard("总歌曲数", state.totalSongs.toString(), TextPrimary, Modifier.weight(1f))
             }
 
+            // 快捷入口
+            Card(
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(12.dp),
+                colors = CardDefaults.cardColors(containerColor = CardDark),
+            ) {
+                Column {
+                    QuickEntry(
+                        icon = Icons.Filled.Cloud,
+                        title = "云贝中心",
+                        subtitle = "查看云贝余额和任务",
+                        onClick = onNavigateToYunbei,
+                    )
+                    QuickEntry(
+                        icon = Icons.Filled.MailOutline,
+                        title = "我的私信",
+                        subtitle = "查看私信消息",
+                        onClick = onNavigateToMessages,
+                    )
+                }
+            }
+
             // 签到状态
             Card(
                 modifier = Modifier.fillMaxWidth(),
@@ -153,6 +184,29 @@ fun HomeScreen(
                         .padding(24.dp),
                 )
             }
+        }
+    }
+}
+
+@Composable
+private fun QuickEntry(
+    icon: ImageVector,
+    title: String,
+    subtitle: String,
+    onClick: () -> Unit,
+) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable(onClick = onClick)
+            .padding(16.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Icon(icon, null, tint = NeteaseRedLight, modifier = Modifier.size(22.dp))
+        Spacer(Modifier.width(12.dp))
+        Column(Modifier.weight(1f)) {
+            Text(title, color = TextPrimary, fontSize = 15.sp)
+            Text(subtitle, color = TextSecondary, fontSize = 12.sp)
         }
     }
 }
