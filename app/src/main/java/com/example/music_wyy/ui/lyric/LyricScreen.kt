@@ -52,6 +52,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.snapshotFlow
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -75,6 +76,7 @@ import com.example.music_wyy.ui.theme.TextSecondary
 import com.example.music_wyy.ui.theme.TextTertiary
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.filter
 import kotlinx.coroutines.launch
 import org.koin.compose.viewmodel.koinViewModel
 import kotlin.math.abs
@@ -125,6 +127,7 @@ fun LyricScreen(
     var isProgrammaticScroll by remember { mutableStateOf(false) }
     var userScrolledAway by remember { mutableStateOf(false) }
     var autoReturnJob by remember { mutableStateOf<Job?>(null) }
+    var scrollAnimJob by remember { mutableStateOf<Job?>(null) }
 
     // Detect user manually scrolling: isScrollInProgress without programmatic flag
     LaunchedEffect(listState.isScrollInProgress) {
@@ -139,28 +142,40 @@ fun LyricScreen(
         }
     }
 
-    // Directly collect player position from StateFlow and update currentLineIndex + scroll
+    // Update currentLineIndex from player position
     LaunchedEffect(lines) {
         if (lines.isEmpty()) return@LaunchedEffect
         playerViewModel.state.collect { s ->
             val idx = lines.indexOfLast { it.timeMs <= s.position.toInt() }
             if (idx != currentLineIndex) {
                 currentLineIndex = idx
-                if (idx >= 0 && !userScrolledAway) {
-                    val viewportH = listState.layoutInfo.viewportSize.height
-                    val centerOffset = -(viewportH / 3)
+            }
+        }
+    }
+
+    // Smooth animated scroll when currentLineIndex changes (separate from update loop)
+    LaunchedEffect(lines) {
+        if (lines.isEmpty()) return@LaunchedEffect
+        snapshotFlow { currentLineIndex }
+            .filter { it >= 0 }
+            .collect { idx ->
+                if (!userScrolledAway) {
+                    scrollAnimJob?.cancel()
                     isProgrammaticScroll = true
-                    try {
-                        listState.scrollToItem(
-                            index = (idx + 1).coerceAtLeast(0),
-                            scrollOffset = centerOffset,
-                        )
-                    } finally {
-                        isProgrammaticScroll = false
+                    scrollAnimJob = scope.launch {
+                        try {
+                            val viewportH = listState.layoutInfo.viewportSize.height
+                            val centerOffset = -(viewportH / 3)
+                            listState.animateScrollToItem(
+                                index = (idx + 1).coerceAtLeast(0),
+                                scrollOffset = centerOffset,
+                            )
+                        } finally {
+                            isProgrammaticScroll = false
+                        }
                     }
                 }
             }
-        }
     }
 
     // Immersive mode: tap lyrics area to toggle bars
