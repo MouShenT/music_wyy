@@ -53,6 +53,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.snapshotFlow
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -149,20 +150,28 @@ fun LyricScreen(
         }
     }
 
-    // Auto-scroll to current line (instant snap to avoid animation cancellation from rapid position updates)
-    LaunchedEffect(currentLineIndex, userScrolledAway) {
-        if (currentLineIndex >= 0 && currentLineIndex != lastScrolledLine && lines.isNotEmpty() && !userScrolledAway) {
-            lastScrolledLine = currentLineIndex
-            isProgrammaticScroll = true
-            try {
-                listState.scrollToItem(
-                    index = (currentLineIndex + 1).coerceAtLeast(0),
-                    scrollOffset = 0,
-                )
-            } finally {
-                isProgrammaticScroll = false
+    // Auto-scroll lyrics by observing playback position via snapshotFlow
+    LaunchedEffect(lines) {
+        if (lines.isEmpty()) return@LaunchedEffect
+        // Reset last scrolled position when lyrics change
+        lastScrolledLine = -1
+        snapshotFlow { playerState.position to userScrolledAway }
+            .collect { (pos, scrolledAway) ->
+                if (scrolledAway) return@collect
+                val idx = lines.indexOfLast { it.timeMs <= pos.toInt() }
+                if (idx >= 0 && idx != lastScrolledLine) {
+                    lastScrolledLine = idx
+                    isProgrammaticScroll = true
+                    try {
+                        listState.scrollToItem(
+                            index = (idx + 1).coerceAtLeast(0),
+                            scrollOffset = 0,
+                        )
+                    } finally {
+                        isProgrammaticScroll = false
+                    }
+                }
             }
-        }
     }
 
     // Immersive mode: tap lyrics area to toggle bars
