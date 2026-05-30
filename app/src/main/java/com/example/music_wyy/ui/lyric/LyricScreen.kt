@@ -47,7 +47,6 @@ import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -120,15 +119,7 @@ fun LyricScreen(
     }
 
     // Find current line index from playback position
-    val currentLineIndex by remember {
-        derivedStateOf {
-            if (lines.isEmpty()) -1
-            else {
-                val pos = playerState.position.toInt()
-                lines.indexOfLast { it.timeMs <= pos }
-            }
-        }
-    }
+    var currentLineIndex by remember { mutableStateOf(-1) }
 
     // Track programmatic vs user-initiated scrolls
     var isProgrammaticScroll by remember { mutableStateOf(false) }
@@ -148,15 +139,22 @@ fun LyricScreen(
         }
     }
 
-    // Auto-scroll lyrics: snap to current line whenever it changes
-    LaunchedEffect(currentLineIndex) {
-        if (currentLineIndex >= 0 && lines.isNotEmpty()) {
-            val target = (currentLineIndex - 3).coerceAtLeast(0) + 1
-            isProgrammaticScroll = true
-            try {
-                listState.scrollToItem(index = target, scrollOffset = 0)
-            } finally {
-                isProgrammaticScroll = false
+    // Directly collect player position from StateFlow and update currentLineIndex + scroll
+    LaunchedEffect(lines) {
+        if (lines.isEmpty()) return@LaunchedEffect
+        playerViewModel.state.collect { s ->
+            val idx = if (lines.isEmpty()) -1 else lines.indexOfLast { it.timeMs <= s.position.toInt() }
+            if (idx != currentLineIndex) {
+                currentLineIndex = idx
+                if (idx >= 0 && !userScrolledAway) {
+                    val target = (idx - 3).coerceAtLeast(0) + 1
+                    isProgrammaticScroll = true
+                    try {
+                        listState.scrollToItem(index = target, scrollOffset = 0)
+                    } finally {
+                        isProgrammaticScroll = false
+                    }
+                }
             }
         }
     }
