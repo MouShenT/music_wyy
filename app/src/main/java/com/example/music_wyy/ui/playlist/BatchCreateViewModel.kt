@@ -8,6 +8,8 @@ import com.example.music_wyy.data.remote.NeteaseAiApi
 import com.example.music_wyy.data.remote.AiSong
 import com.example.music_wyy.data.remote.ChatRequest
 import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.async
+import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -30,6 +32,7 @@ data class BatchCreateUiState(
     val aiLoading: Boolean = false,
     val aiError: String? = null,
     val aiFromCache: Boolean = false,
+    val aiKeywordsUsed: Int = 0,
     val selectedAiIndices: Set<Int> = emptySet(),
     val showAiDialog: Boolean = false,
 )
@@ -93,8 +96,9 @@ class BatchCreateViewModel(
                         aiLoading = false,
                         aiSongs = resp.songs,
                         aiFromCache = resp.fromCache,
+                        aiKeywordsUsed = resp.keywordsUsed,
                         selectedAiIndices = allIndices,
-                        aiError = if (resp.songs.isEmpty()) "AI 未返回结果，请尝试更具体的描述" else null,
+                        aiError = if (resp.songs.isEmpty()) "AI 未找到相关歌曲，请尝试更具体的描述" else null,
                     )
                 }
             } catch (e: CancellationException) {
@@ -123,7 +127,7 @@ class BatchCreateViewModel(
             }
 
             val log = mutableListOf<String>()
-            fun log(msg: String) { log.add(msg); _state.update { it.copy(log = log.toList()) } }
+            fun log(msg: String) { log.add(msg); if (log.size > 5) log.removeAt(0); _state.update { it.copy(log = log.toList()) } }
 
             try {
                 val lines = s.songInput.lines().map { it.trim() }.filter { it.isNotBlank() }
@@ -137,31 +141,60 @@ class BatchCreateViewModel(
                     else line to ""
                 }
 
-                log("共 ${songs.size} 首歌，开始搜索匹配...")
+                log("共 ${songs.size} 首歌，并行搜索匹配...")
 
+                // 并行搜索 (3 并发)
                 val matched = mutableListOf<Long>()
-                for ((i, song) in songs.withIndex()) {
-                    val keyword = if (song.second.isNotBlank()) "${song.first} ${song.second}" else song.first
-                    val resp = api.search(keyword, cookie = "MUSIC_U=$cookie")
-                    val body = resp.string()
-                    val result = json.decodeFromString<SearchResponse>(body)
-                    val trackId = result.result?.songs?.firstOrNull()?.id
-                    if (trackId != null) {
-                        matched.add(trackId)
-                        log("  ✅ [${i + 1}/${songs.size}] ${song.first} → 已匹配")
-                    } else {
-                        log("  ❌ [${i + 1}/${songs.size}] ${song.first} → 未找到")
+                val notFound = mutableListOf<String>()
+                val concurrency = 3
+
+                suspend fun searchOne(index: Int, name: String, artist: String): Long? {
+                    return try {
+                        val keyword = if (artist.isNotBlank()) "$name $artist" else name
+                        val resp = api.search(keyword, cookie = "MUSIC_U=$cookie")
+                        val body = resp.string()
+                        val result = json.decodeFromString<SearchResponse>(body)
+                        val trackId = result.result?.songs?.firstOrNull()?.id
+                        when {
+                            trackId != null -> {
+                                log("  ✅ [${index + 1}/${songs.size}] $name → 已匹配")
+                                trackId
+                            }
+                            else -> {
+                                log("  ❌ [${index + 1}/${songs.size}] $name → 未找到")
+                                notFound.add(name)
+                                null
+                            }
+                        }
+                    } catch (e: CancellationException) {
+                        throw e
+                    } catch (e: Exception) {
+                        log("  ⚠️ [${index + 1}/${songs.size}] $name → 搜索失败，已跳过")
+                        notFound.add(name)
+                        null
                     }
-                    delay(400)
+                }
+
+                coroutineScope {
+                    songs.withIndex().chunked(concurrency).forEach { batch ->
+                        val deferred = batch.map { (i, song) ->
+                            async { searchOne(i, song.first, song.second) }
+                        }
+                        deferred.forEach { it.await()?.let { id -> matched.add(id) } }
+                    }
                 }
 
                 if (matched.isEmpty()) {
-                    _state.update { it.copy(isRunning = false, resultMessage = "没有匹配到任何歌曲") }
+                    val unfoundMsg = if (notFound.isNotEmpty()) {
+                        "\n\n未找到: ${notFound.joinToString("、")}"
+                    } else ""
+                    _state.update { it.copy(isRunning = false, resultMessage = "没有匹配到任何歌曲$unfoundMsg") }
                     return@launch
                 }
 
                 log("匹配完成: ${matched.size}/${songs.size}")
 
+                // 创建歌单
                 val createResp = api.createPlaylist(s.playlistName, "MUSIC_U=$cookie")
                 val createBody = createResp.string()
                 val createResult = json.decodeFromString<CreatePlaylistResponse>(createBody)
@@ -170,31 +203,39 @@ class BatchCreateViewModel(
                     _state.update { it.copy(isRunning = false, resultMessage = "创建歌单失败: ${createResult.code}") }
                     return@launch
                 }
-                log("歌单「${s.playlistName}」创建成功 (id: $playlistId)")
+                log("歌单「${s.playlistName}」创建成功")
 
-                val batchSize = 100
+                // 批量添加（每批最多 1000 首，网易云限制 1000）
+                val batchSize = 1000
                 val batches = matched.chunked(batchSize)
                 for ((i, batch) in batches.withIndex()) {
                     val tracksParam = batch.joinToString(",")
-                    api.addTracksToPlaylist(op = "add", pid = playlistId.toString(), tracks = tracksParam, cookie = "MUSIC_U=$cookie")
-                    log("  添加第 ${i + 1}/${batches.size} 批 (${batch.size} 首)")
+                    try {
+                        api.addTracksToPlaylist(
+                            op = "add", pid = playlistId.toString(),
+                            tracks = tracksParam, cookie = "MUSIC_U=$cookie"
+                        )
+                        log("  添加第 ${i + 1}/${batches.size} 批 (${batch.size} 首)")
+                    } catch (e: Exception) {
+                        log("  ⚠️ 第 ${i + 1} 批添加失败: ${e.localizedMessage}")
+                    }
                     if (batches.size > 1) delay(300)
                 }
 
-                _state.update {
-                    it.copy(
-                        isRunning = false,
-                        resultMessage = "完成! 创建歌单「${s.playlistName}」，添加 ${matched.size} 首歌",
-                    )
+                // 构建结果消息
+                val resultMsg = buildString {
+                    append("完成! 歌单「${s.playlistName}」添加 ${matched.size} 首")
+                    if (notFound.isNotEmpty()) {
+                        append("\n\n未导入 (${notFound.size} 首):\n")
+                        append(notFound.joinToString("、"))
+                    }
                 }
+                _state.update { it.copy(isRunning = false, resultMessage = resultMsg) }
             } catch (e: CancellationException) {
                 throw e
             } catch (e: Exception) {
                 _state.update {
-                    it.copy(
-                        isRunning = false,
-                        resultMessage = "失败: ${e.localizedMessage ?: "未知错误"}",
-                    )
+                    it.copy(isRunning = false, resultMessage = "失败: ${e.localizedMessage ?: "未知错误"}")
                 }
             }
         }

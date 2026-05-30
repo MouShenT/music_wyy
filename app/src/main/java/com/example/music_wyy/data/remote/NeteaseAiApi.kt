@@ -31,12 +31,16 @@ data class ChatResponse(
     val total: Int = 0,
     @SerialName("from_cache")
     val fromCache: Boolean = false,
+    @SerialName("keywords_used")
+    val keywordsUsed: Int = 0,
 )
 
 @Serializable
 data class AiSong(
     val name: String,
     val artist: String,
+    val id: Long = 0,
+    val album: String = "",
 )
 
 @Serializable

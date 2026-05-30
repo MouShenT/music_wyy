@@ -30,6 +30,7 @@ import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.AutoAwesome
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.MusicNote
+import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.outlined.CheckCircle
@@ -51,6 +52,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -62,6 +64,7 @@ import com.example.music_wyy.ui.ai.AiSearchViewModel
 import com.example.music_wyy.ui.ai.AiSearchEvent
 import com.example.music_wyy.ui.player.PlayerViewModel
 import com.example.music_wyy.ui.player.PlayingSong
+import kotlinx.coroutines.launch
 import org.koin.compose.viewmodel.koinViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -81,6 +84,7 @@ fun HomeScreen(
     val playerState by playerViewModel.state.collectAsStateWithLifecycle()
     val aiState by aiSearchViewModel.state.collectAsStateWithLifecycle()
     val recentlyPlayed = playerState.playlist.takeLast(10).reversed()
+    val scope = rememberCoroutineScope()
 
     var showAiSearch by remember { mutableStateOf(false) }
 
@@ -318,7 +322,7 @@ fun HomeScreen(
                                                     else MaterialTheme.colorScheme.surfaceVariant,
                                                     RoundedCornerShape(8.dp),
                                                 )
-                                                .padding(horizontal = 8.dp, vertical = 8.dp),
+                                                .padding(start = 8.dp, top = 6.dp, bottom = 6.dp, end = 4.dp),
                                             verticalAlignment = Alignment.CenterVertically,
                                         ) {
                                             Icon(
@@ -328,7 +332,7 @@ fun HomeScreen(
                                                     else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.4f),
                                                 modifier = Modifier.size(16.dp),
                                             )
-                                            Spacer(Modifier.width(8.dp))
+                                            Spacer(Modifier.width(6.dp))
                                             Column(Modifier.weight(1f)) {
                                                 Text(song.name,
                                                     color = MaterialTheme.colorScheme.onSurface,
@@ -338,6 +342,50 @@ fun HomeScreen(
                                                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                                                     style = MaterialTheme.typography.labelSmall,
                                                     maxLines = 1, overflow = TextOverflow.Ellipsis)
+                                            }
+                                            IconButton(
+                                                onClick = {
+                                                    scope.launch {
+                                                        // 如果 AI 已返回 ID，直接用；否则搜索
+                                                        if (song.id > 0) {
+                                                            playerViewModel.playSong(
+                                                                PlayingSong(
+                                                                    id = song.id.toString(),
+                                                                    name = song.name,
+                                                                    artist = song.artist,
+                                                                    album = song.album,
+                                                                    coverUrl = null,
+                                                                )
+                                                            )
+                                                        } else {
+                                                            val result = viewModel.searchAiSong(song.name, song.artist)
+                                                            if (result != null) {
+                                                                playerViewModel.playSong(
+                                                                    PlayingSong(
+                                                                        id = result.id.toString(),
+                                                                        name = result.name,
+                                                                        artist = result.artist,
+                                                                        album = result.album,
+                                                                        coverUrl = result.coverUrl,
+                                                                    )
+                                                                )
+                                                            }
+                                                        }
+                                                    }
+                                                },
+                                                modifier = Modifier.size(32.dp),
+                                            ) {
+                                                Icon(Icons.Filled.PlayArrow, "播放",
+                                                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                                                    modifier = Modifier.size(16.dp))
+                                            }
+                                            IconButton(
+                                                onClick = { viewModel.searchAndShowPicker(song.name, song.artist) },
+                                                modifier = Modifier.size(32.dp),
+                                            ) {
+                                                Icon(Icons.Filled.Add, "加入歌单",
+                                                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                                                    modifier = Modifier.size(16.dp))
                                             }
                                         }
                                     }

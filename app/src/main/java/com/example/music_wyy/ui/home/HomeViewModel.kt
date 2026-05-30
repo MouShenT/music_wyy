@@ -74,6 +74,15 @@ private data class AlbumData(val name: String = "", val picUrl: String? = null)
 private data class PlaylistListResponse(val playlist: List<PlaylistItemData> = emptyList())
 @Serializable
 private data class PlaylistItemData(val id: Long = 0, val name: String = "", val trackCount: Int = 0)
+@Serializable
+private data class SongDetailResponse(val songs: List<SongDetailData>? = null)
+@Serializable
+private data class SongDetailData(
+    val id: Long = 0,
+    val name: String = "",
+    val ar: List<ArtistData>? = null,
+    val al: AlbumData? = null,
+)
 
 class HomeViewModel(
     private val api: NeteaseApi,
@@ -242,6 +251,61 @@ class HomeViewModel(
     fun clearSearch() {
         _state.update {
             it.copy(searchQuery = "", searchResults = emptyList(), searchMessage = null, isSearching = false)
+        }
+    }
+
+    /**
+     * Search for an AI-discovered song and return its search result.
+     * If the AI already provided a track ID, use it directly (skip API search).
+     */
+    suspend fun searchAiSong(name: String, artist: String, aiId: Long = 0): SearchResultItem? {
+        // 如果 AI 已经提供了 track ID，直接用 ID 获取歌曲详情
+        if (aiId > 0) {
+            return try {
+                val cookie = cookieStore.cookie.first() ?: return null
+                val resp = api.getSongDetail(ids = aiId.toString(), cookie = "MUSIC_U=$cookie")
+                val body = resp.string()
+                val detail = json.decodeFromString<SongDetailResponse>(body)
+                detail.songs?.firstOrNull()?.let { s ->
+                    SearchResultItem(
+                        id = s.id,
+                        name = s.name,
+                        artist = s.ar?.joinToString("/") { it.name } ?: artist,
+                        album = s.al?.name ?: "",
+                        coverUrl = s.al?.picUrl,
+                    )
+                }
+            } catch (_: Exception) { null }
+        }
+        // AI 没有 ID，回退到关键词搜索
+        val cookie = cookieStore.cookie.first() ?: ""
+        val keyword = "$name $artist"
+        val resp = api.search(keywords = keyword, limit = 5, cookie = "MUSIC_U=$cookie")
+        val body = resp.string()
+        val result = json.decodeFromString<SearchResponse>(body)
+        return result.result?.songs?.firstOrNull()?.let { s ->
+            SearchResultItem(
+                id = s.id,
+                name = s.name,
+                artist = s.ar.joinToString("/") { it.name },
+                album = s.al.name,
+                coverUrl = s.al.picUrl,
+            )
+        }
+    }
+
+    fun searchAndShowPicker(songName: String, songArtist: String) {
+        viewModelScope.launch {
+            try {
+                val song = searchAiSong(songName, songArtist)
+                if (song != null) {
+                    showPlaylistPicker(song.id, song.name)
+                } else {
+                    _state.update { it.copy(addResultMessage = "未找到「$songName」") }
+                }
+            } catch (_: Exception) {
+                _state.update { it.copy(addResultMessage = "搜索「$songName」失败") }
+            }
         }
     }
 }

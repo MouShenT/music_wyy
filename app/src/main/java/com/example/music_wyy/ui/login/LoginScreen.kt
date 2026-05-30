@@ -8,9 +8,7 @@ import androidx.compose.animation.fadeOut
 import androidx.compose.animation.shrinkVertically
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.togetherWith
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -20,12 +18,9 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.MusicNote
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
@@ -37,7 +32,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import org.koin.compose.viewmodel.koinViewModel
@@ -56,50 +50,27 @@ fun LoginScreen(
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .padding(horizontal = 24.dp),
+            .padding(horizontal = 32.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center,
     ) {
-        // Logo
-        Box(
-            modifier = Modifier
-                .size(88.dp)
-                .background(MaterialTheme.colorScheme.primary, RoundedCornerShape(24.dp)),
-            contentAlignment = Alignment.Center,
-        ) {
-            Icon(
-                imageVector = Icons.Filled.MusicNote,
-                contentDescription = null,
-                tint = MaterialTheme.colorScheme.onPrimary,
-                modifier = Modifier.size(44.dp),
-            )
-        }
-
-        Spacer(Modifier.height(16.dp))
         Text(
-            "网易云工具",
-            style = MaterialTheme.typography.headlineMedium,
+            "墨韵音乐",
+            style = MaterialTheme.typography.displaySmall,
             fontWeight = FontWeight.Bold,
             color = MaterialTheme.colorScheme.onSurface,
         )
-        Text(
-            "歌单管理 · 自动化签到 · 数据分析",
-            style = MaterialTheme.typography.bodySmall,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-        )
 
-        Spacer(Modifier.height(40.dp))
+        Spacer(Modifier.height(48.dp))
 
-        // Cookie input
         OutlinedTextField(
             value = state.cookie,
             onValueChange = viewModel::onCookieChange,
             modifier = Modifier.fillMaxWidth(),
-            label = { Text("粘贴 Cookie", color = MaterialTheme.colorScheme.onSurfaceVariant) },
             placeholder = {
                 Text(
-                    "粘贴从浏览器复制的 Cookie...",
-                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f),
+                    "粘贴 Cookie...",
+                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.3f),
                 )
             },
             colors = OutlinedTextFieldDefaults.colors(
@@ -116,16 +87,6 @@ fun LoginScreen(
             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Ascii),
         )
 
-        Spacer(Modifier.height(8.dp))
-        Text(
-            text = "浏览器登录 music.163.com → F12 → Cookies → 复制 Cookie 值",
-            style = MaterialTheme.typography.labelMedium,
-            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f),
-            textAlign = TextAlign.Center,
-            modifier = Modifier.padding(horizontal = 8.dp),
-        )
-
-        // Error message
         val errorMsg = state.error
         AnimatedVisibility(
             visible = errorMsg != null,
@@ -136,14 +97,12 @@ fun LoginScreen(
                 text = errorMsg ?: "",
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.primary,
-                textAlign = TextAlign.Center,
                 modifier = Modifier.padding(top = 12.dp),
             )
         }
 
         Spacer(Modifier.height(28.dp))
 
-        // Login button
         Button(
             onClick = { viewModel.login() },
             modifier = Modifier
