@@ -134,7 +134,6 @@ fun LyricScreen(
     var isProgrammaticScroll by remember { mutableStateOf(false) }
     var userScrolledAway by remember { mutableStateOf(false) }
     var autoReturnJob by remember { mutableStateOf<Job?>(null) }
-    var lastScrolledLine by remember { mutableStateOf(-1) }
 
     // Detect user manually scrolling: isScrollInProgress without programmatic flag
     LaunchedEffect(listState.isScrollInProgress) {
@@ -149,23 +148,15 @@ fun LyricScreen(
         }
     }
 
-    // Auto-scroll lyrics: poll position every 250ms and snap to current line
-    LaunchedEffect(lines) {
-        if (lines.isEmpty()) return@LaunchedEffect
-        lastScrolledLine = -1
-        while (true) {
-            delay(250)
-            if (userScrolledAway) continue
-            val idx = lines.indexOfLast { it.timeMs <= playerState.position.toInt() }
-            if (idx >= 0 && idx != lastScrolledLine) {
-                lastScrolledLine = idx
-                isProgrammaticScroll = true
-                try {
-                    val target = (idx - 3).coerceAtLeast(0) + 1
-                    listState.scrollToItem(index = target, scrollOffset = 0)
-                } finally {
-                    isProgrammaticScroll = false
-                }
+    // Auto-scroll lyrics: snap to current line whenever it changes
+    LaunchedEffect(currentLineIndex) {
+        if (currentLineIndex >= 0 && lines.isNotEmpty()) {
+            val target = (currentLineIndex - 3).coerceAtLeast(0) + 1
+            isProgrammaticScroll = true
+            try {
+                listState.scrollToItem(index = target, scrollOffset = 0)
+            } finally {
+                isProgrammaticScroll = false
             }
         }
     }
