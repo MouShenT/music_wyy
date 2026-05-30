@@ -163,10 +163,8 @@ fun LyricScreen(
                     lastScrolledLine = idx
                     isProgrammaticScroll = true
                     try {
-                        listState.scrollToItem(
-                            index = (idx + 1).coerceAtLeast(0),
-                            scrollOffset = 0,
-                        )
+                        val target = (idx - 3).coerceAtLeast(0) + 1
+                        listState.scrollToItem(index = target, scrollOffset = 0)
                     } finally {
                         isProgrammaticScroll = false
                     }
@@ -255,10 +253,10 @@ fun LyricScreen(
                         val distance = abs(i - currentLineIndex)
                         val alpha = when {
                             isCurrent -> 1f
-                            distance <= 2 -> 0.85f
-                            distance <= 4 -> 0.6f
-                            distance <= 7 -> 0.4f
-                            else -> 0.25f
+                            distance <= 2 -> 0.55f
+                            distance <= 4 -> 0.35f
+                            distance <= 7 -> 0.2f
+                            else -> 0.12f
                         }
 
                         Column(
@@ -270,10 +268,10 @@ fun LyricScreen(
                             Text(
                                 line.text.ifBlank { "♪" },
                                 color = if (isCurrent) TextPrimary else TextPrimary.copy(alpha = alpha),
-                                fontSize = if (isCurrent) 18.sp else 15.sp,
-                                fontWeight = if (isCurrent) FontWeight.Bold else FontWeight.Normal,
+                                fontSize = if (isCurrent) 22.sp else 14.sp,
+                                fontWeight = if (isCurrent) FontWeight.Black else FontWeight.Normal,
                                 textAlign = TextAlign.Center,
-                                lineHeight = 28.sp,
+                                lineHeight = if (isCurrent) 32.sp else 24.sp,
                             )
                             if (lyricState.showTranslation && line.transText.isNotBlank()) {
                                 Spacer(Modifier.height(2.dp))
