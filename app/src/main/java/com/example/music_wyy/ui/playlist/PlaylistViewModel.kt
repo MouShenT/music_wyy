@@ -5,6 +5,7 @@ import androidx.lifecycle.viewModelScope
 import com.example.music_wyy.data.local.datastore.CookieStore
 import com.example.music_wyy.data.remote.NeteaseApi
 import com.example.music_wyy.session.UserSession
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -96,6 +97,8 @@ class PlaylistViewModel(
                         totalSongs = playlists.sumOf { p -> p.songCount },
                     )
                 }
+            } catch (e: CancellationException) {
+                throw e
             } catch (e: Exception) {
                 _state.update {
                     it.copy(
