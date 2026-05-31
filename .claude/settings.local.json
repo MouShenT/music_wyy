@@ -1,9 +1,0 @@
-{
-  "permissions": {
-    "allow": [
-      "Bash(git -C \"D:\\\\aaopenclow-share\\\\music_wyy\" add -u)",
-      "Bash(git -C \"D:\\\\aaopenclow-share\\\\music_wyy\" reset HEAD -- app/src/main/java/com/example/music_wyy/di/AppModule.kt)",
-      "Bash(git -C \"D:\\\\aaopenclow-share\\\\music_wyy\" status)"
-    ]
-  }
-}
