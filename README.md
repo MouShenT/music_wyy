@@ -102,7 +102,7 @@ Redis 缓存 (7天TTL) → 相同查询秒级响应
 | NeteaseCloudMusicApi | Docker 部署，端口 3000，提供网易云 API 代理 |
 | AI 服务 | FastAPI + DeepSeek API (:8100) + Redis (:6380) |
 
-后端部署在 Kali Linux (内网 192.168.117.149)，App 通过内网直连，不经过公网。
+后端部署在Linux (内网 192.168.117.149)，App 通过内网直连，不经过公网。
 
 ## 项目结构
 
