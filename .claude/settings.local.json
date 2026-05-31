@@ -1,41 +1,9 @@
 {
   "permissions": {
     "allow": [
-      "WebSearch",
-      "WebFetch",
-      "Bash(git:*)",
-      "Bash(gradle:*)",
-      "Bash(gradlew:*)",
-      "Bash(adb:*)",
-      "Bash(npm:*)",
-      "Bash(npx:*)",
-      "Bash(node:*)",
-      "Bash(java:*)",
-      "Bash(javac:*)",
-      "Bash(kotlin:*)",
-      "Bash(chmod:*)",
-      "Bash(mkdir:*)",
-      "Bash(ls:*)",
-      "Bash(cd:*)",
-      "Bash(cat:*)",
-      "Bash(echo:*)",
-      "Bash(env:*)",
-      "Bash(which:*)",
-      "Bash(find:*)",
-      "Bash(where:*)",
-      "Bash(reg:*)",
-      "Bash(python:*)",
-      "Bash(flutter:*)",
-      "Bash(dart:*)",
-      "Read(/d/aaopenclow-share/wyy/**)",
-      "Read(/d/software/AndroidStudioData/sdk/**)",
-      "Read(/c/Users/moushen/AppData/Local/Android/**)",
-      "Read(/c/Users/moushen/.android/**)",
-      "Read(/c/Users/moushen/.gradle/**)",
-      "Write(/d/aaopenclow-share/wyy/**)",
-      "Edit(/d/aaopenclow-share/wyy/**)",
-      "Glob(/d/aaopenclow-share/wyy/**)",
-      "Grep(/d/aaopenclow-share/wyy/**)"
+      "Bash(git -C \"D:\\\\aaopenclow-share\\\\music_wyy\" add -u)",
+      "Bash(git -C \"D:\\\\aaopenclow-share\\\\music_wyy\" reset HEAD -- app/src/main/java/com/example/music_wyy/di/AppModule.kt)",
+      "Bash(git -C \"D:\\\\aaopenclow-share\\\\music_wyy\" status)"
     ]
   }
 }
