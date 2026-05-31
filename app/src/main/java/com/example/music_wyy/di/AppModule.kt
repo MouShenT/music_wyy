@@ -46,7 +46,7 @@ val appModule = module {
     single(named("netease")) {
         val okHttp: OkHttpClient = get()
         Retrofit.Builder()
-            .baseUrl("http://10.0.2.2:3000/")
+            .baseUrl("http://111.230.199.168:3000/")
             .client(okHttp)
             .build()
     }
@@ -66,7 +66,7 @@ val appModule = module {
             .build()
         val json: Json = get()
         Retrofit.Builder()
-            .baseUrl("http://10.0.2.2:8100/")
+            .baseUrl("http://111.230.199.168:8100/")
             .client(aiOkHttp)
             .addConverterFactory(json.asConverterFactory("application/json".toMediaType()))
             .build()
